@@ -72,6 +72,7 @@ let playerNickname = null;
 let leaderboardData = [];
 let difficultyIsCapped = false;
 let cappedDifficultyValue = 1;
+let canClickCards = true; // NOVO: Controle de clique de carta
 
 let player, terrain;
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
@@ -158,7 +159,9 @@ class Player {
     castThunderbolt(count){if(enemies.length===0)return;const thunderboltLevel = this.upgrades['Thunderbolt']?.level || 1;const dmg = 35 + (thunderboltLevel - 1) * 25;const targets=[...enemies].sort(()=>0.5-Math.random()).slice(0,count);targets.forEach(enemy=>{enemy.takeDamage(dmg,true,true);particles.push(new Thunderbolt(enemy.x+enemy.width/2));});}
     castCelestialJudgement(){if(enemies.length===0)return;const targetEnemy=[...enemies].sort((a,b)=>b.hp-a.hp)[0];particles.push(new CelestialBeam(targetEnemy.x+targetEnemy.width/2));setTimeout(()=>{enemies.forEach(e=>{if(Math.abs(e.x+e.width/2-targetEnemy.x-targetEnemy.width/2)<50)e.takeDamage(this.stats.celestialJudgement.damage,false)})},1000);}
     gainExp(amount){this.exp+=amount*this.stats.expMultiplier;if(this.exp>=this.expToNextLevel){this.exp-=this.expToNextLevel;this.expToNextLevel=Math.floor(this.expToNextLevel*1.65);this.level++;if(this.stats.canHeal)this.hp=this.stats.maxHp;levelColorIndex=(levelColorIndex+1)%THEMES.length;currentTheme=THEMES[levelColorIndex];generateBackground();
+    canClickCards = false;
     if(this.level%5===0){gameState='pact';generatePactChoices();}else{gameState='levelUp';generateUpgradeChoices();}
+    setTimeout(() => { canClickCards = true; }, 2000);
     floatingTexts.push(new FloatingText(this.x,this.y-30,'LEVEL UP!','lime'));playLevelUpSound();}}
 }
 function generateBackground() {
@@ -315,9 +318,11 @@ function generatePactChoices(){currentPactChoices=[];const pool=[...PACTS];for(l
 function generateBossRewardChoices(){currentBossRewardChoices=[];const legendaryPool=UPGRADES.filter(u=>u.r==='l');for(let i=0;i<3;i++){if(legendaryPool.length===0)break;const choice=legendaryPool.splice(Math.floor(Math.random()*legendaryPool.length),1)[0];currentBossRewardChoices.push(choice)}}
 function handleCollisions(){for(let projIndex=playerProjectiles.length-1;projIndex>=0;projIndex--){const proj=playerProjectiles[projIndex];let projectileRemoved=false;for(let i=enemies.length-1;i>=0;i--){const enemy=enemies[i];if(checkCollision({x:proj.x-proj.radius,y:proj.y-proj.radius,width:proj.radius*2,height:proj.radius*2},enemy)){if(!proj.hitEnemies.includes(enemy)){proj.hitEnemies.push(enemy);enemy.takeDamage(proj.damage,true);if(enemy.hp<=0){
 if(enemy instanceof Boss){
-    bossIsActive=false;
+    canClickCards = false;
     gameState='bossReward';
     generateBossRewardChoices();
+    setTimeout(() => { canClickCards = true; }, 2000);
+    bossIsActive=false;
 }
 if(player.upgrades["Reaper's Scythe"]){enemies.forEach(e=>{if(e!==enemy&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<100)e.takeDamage(enemy.maxHp*0.25,false)})}
 playKillSound();if(!gameData.settings.performanceMode){for(let p=0;p<15;p++){particles.push(new Particle(enemy.x+enemy.width/2,enemy.y+enemy.height/2,random(-3,3),random(-3,3),random(2,5),currentTheme.highlight,random(30,60)))}}player.gainExp(enemy.expValue);score+=enemy.expValue;enemies.splice(i,1);}
@@ -414,6 +419,7 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
     if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if(menuState==='binds')currentButtons=bindsButtons;currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='paused'){pauseButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='levelUp' || gameState==='bossReward'){
+        if (!canClickCards) return;
         const isBossReward = gameState === 'bossReward';
         const choices = isBossReward ? currentBossRewardChoices : currentUpgradeChoices;
         const cW=220,cH=320,gap=30;const tW=choices.length*cW+(choices.length-1)*gap;const sX=(canvas.width-tW)/2;const y=canvas.height/2-cH/2;choices.forEach((card,index)=>{const x=sX+index*(cW+gap);if(mouse.x>x&&mouse.x<x+cW&&mouse.y>y&&mouse.y<y+cH){playClickSound();if(card.type==='active'){if(!player.activeAbilities.f)player.activeAbilities.f=card;else if(!player.activeAbilities.g)player.activeAbilities.g=card;else if(!player.activeAbilities.j)player.activeAbilities.j=card;}else{const pUpgrade=player.upgrades[card.n];if(pUpgrade){if(pUpgrade.level<MAX_LEVEL){pUpgrade.level++;if(card.scaling)card.scaling(player);}}else{player.upgrades[card.n]={level:1};card.a(player);}}
@@ -429,7 +435,9 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         }
         gameState='playing'
     }})}
-    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cH){playClickSound();card.a(player);gameState='playing';}});
+    else if(gameState==='pact'){
+        if (!canClickCards) return;
+        const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH){playClickSound();card.a(player);gameState='playing';}});
     }
 });
 
@@ -446,7 +454,8 @@ class VoidSpike extends Particle { constructor(x, y, w) { super(x, y, 0, 0, 0, '
 
 class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super('boss', x, y);
+        super('boss', x, y); // Chamada para herança de métodos
+        
         const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
         this.name = bossData.name;
         this.spriteFunction = bossData.spriteFunction;
