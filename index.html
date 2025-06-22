@@ -81,17 +81,21 @@ let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
 
-// --- NOVO: ESTADO DO QUICK TIME EVENT (QTE) ---
+// --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = {
     active: false,
     keyToPress: null,
     timer: 0,
-    maxTime: 1500, // 1.5 segundos para reagir
+    maxTime: 1500,
     success: null
 };
 
+// --- NOVO: LÓGICA DE CHEAT CODE ---
+let keySequence = [];
+let isGodModeActive = false;
+
 // --- INPUT HANDLERS (DEFINIÇÃO GLOBAL ÚNICA) ---
-const keys = { a:{p:false}, d:{p:false}, w:{p:false}, s:{p:false}, space:{p:false}, f:{p:false}, g:{p:false}, j:{p:false} };
+const keys = { a:{p:false}, d:{p:false}, w:{p:false}, s:{p:false}, space:{p:false}, f:{p:false}, g:{p:false}, j:{p:false}, l:{p:false}, p:{p:false} };
 const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
 
 // --- LEADERBOARD (ONLINE - JSONBin.io) ---
@@ -111,7 +115,6 @@ async function fetchLeaderboard() {
 
 async function submitScore(nickname, score) {
     if (!nickname || typeof score !== 'number' || score === 0) return;
-
     let currentScores = [];
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -123,18 +126,15 @@ async function submitScore(nickname, score) {
         console.error("Could not fetch scores to submit new one:", error);
         currentScores = [];
     }
-
     const existingEntry = currentScores.find(entry => entry.nickname === nickname);
     if (existingEntry && score <= existingEntry.score) {
         await fetchLeaderboard();
         return;
     }
-
     const otherPlayerScores = currentScores.filter(entry => entry.nickname !== nickname);
     otherPlayerScores.push({ nickname: nickname, score: score });
     otherPlayerScores.sort((a, b) => b.score - a.score);
     const newLeaderboard = otherPlayerScores.slice(0, 10);
-
     try {
         await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
@@ -188,6 +188,7 @@ nicknameButton.addEventListener('click', () => {
 
 
 // --- YOUTUBE API & AUDIO ---
+let lastEnemyHitSoundTime = 0; // Cooldown para o som de hit
 function onYouTubeIframeAPIReady() {ytPlayer = new YT.Player('yt-player-container', {height: '1', width: '1', playerVars: {'playsinline': 1, 'listType': 'playlist', 'list': 'PLdsGes2mFh92eHpOZVJQgoubb6rF0CcvU', 'loop': 1 }, events: {'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange}});}
 function onPlayerReady(event) {isMusicReady = true; event.target.setShuffle(true); event.target.setVolume(gameData.settings.volume); if (hasUserInteracted) {event.target.playVideo();}}
 function onPlayerStateChange(event) {if (event.data === YT.PlayerState.ENDED) {ytPlayer.playVideo();}}
@@ -195,7 +196,18 @@ function initAudio() {if (!audioCtx) {audioCtx = new (window.AudioContext || win
 function playClickSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(800, audioCtx.currentTime); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1);}
 function playDefeatSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(400, audioCtx.currentTime); g.gain.setValueAtTime(0.2, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 1.2);}
 function playPowerUpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(300, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.2);}
-function playHitSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(150, audioCtx.currentTime); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.08);}
+// NOVO: EFEITO SONORO DE DANO ("TUC")
+function playEnemyHitSound() {
+    if (!audioCtx || Date.now() - lastEnemyHitSoundTime < 50) return; // Cooldown de 50ms
+    lastEnemyHitSoundTime = Date.now();
+    const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+    o.type = 'square';
+    g.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    o.frequency.setValueAtTime(300, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+    o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+    o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1);
+}
 function playKillSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15);}
 function playDamageSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15); }
 function playJumpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(440, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1); }
@@ -214,7 +226,9 @@ class Player {
     this.stats={speed:5,jumpStrength:16,maxJumps:1,maxHp:100,projectileDamage:8,attackSpeed:500,critChance:0.05,critDamageMultiplier:1.5,lifesteal:0,projectileSize:6,projectileBounces:0,projectilePierces:0,invincibilityDuration:500,upgradeChoices:3,revives:0,contactDamage:0,damageMultiplier:1,expMultiplier:1,globalEnemySpeedMod:1,hasOneShot:false,hasFrenzy:false,canHeal:true,hasThunderbolt:false,thunderboltTimer:5e3,hasWisp:false,wisp:null,canBleed:false,chainChance:0,
     novaPulse:{enabled:false,timer:4000,damage:20},aegis:{enabled:false,active:true,timer:0,cooldown:15000},celestialJudgement:{enabled:false,timer:10000,damage:200},devilsBargain:{enabled:false,timer:1000},
     activePowers:{aegis:{active:false,timer:0,cooldownTimer:0},chronoShift:{active:false,timer:0,cooldownTimer:0},berserk:{active:false,timer:0,cooldownTimer:0},singularity:{active:false,timer:0,cooldownTimer:0},warpDrive:{active:false,timer:0,cooldownTimer:0}}};
-    this.hp=this.stats.maxHp;this.regenTimer=5000;this.regenCooldown=5000;}
+    this.hp=this.stats.maxHp;this.regenTimer=5000;this.regenCooldown=5000;
+    this.godModeOriginals = {}; // Para guardar stats antes do modo deus
+    }
 
     async takeDamage(amount, fromProjectile = true){
         if (this.hp <= 0 || gameState === 'gameOver') return;
@@ -230,6 +244,7 @@ class Player {
         if(this.hp <= 0){
             this.hp = 0;
             gameState = 'gameOver';
+            if (isGodModeActive) toggleGodMode(); // Desativa o modo deus ao morrer
 
             if(this.stats.revives > 0){
                 this.stats.revives--;
@@ -247,9 +262,9 @@ class Player {
         }
     }
     draw(theme){drawPlayerSprite(this,theme);if(this.stats.aegis.enabled&&this.stats.aegis.active){ctx.save();ctx.fillStyle='rgba(3, 169, 244, 0.2)';ctx.strokeStyle='#03A9F4';ctx.lineWidth=2;ctx.shadowColor='#81D4FA';ctx.shadowBlur=15;ctx.beginPath();ctx.arc(this.x+this.width/2,this.y+this.height/2,this.width,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.restore();}}
-    update(){this.velocity.x=0;if(keys.a.p)this.velocity.x=-this.stats.speed;if(keys.d.p)this.velocity.x=this.stats.speed;this.x+=this.velocity.x;this.y+=this.velocity.y;if(this.y+this.height+this.velocity.y<canvas.height){this.velocity.y+=GRAVITY}else{this.velocity.y=0}let onPlatform=false;terrain.blocks.forEach(p=>{if(this.y+this.height<=p.y&&this.y+this.height+this.velocity.y>=p.y&&this.x+this.width>p.x&&this.x<p.x+p.width){this.velocity.y=0;this.y=p.y-this.height;onPlatform=true}});if(onPlatform){this.jumpsLeft=this.stats.maxJumps}if(this.x<50)this.x=50;if(this.x+this.width>canvas.width-50)this.x=canvas.width-50-this.width;if(this.shootCooldown>0)this.shootCooldown-=16.67;if(this.invincibilityTimer>0)this.invincibilityTimer-=16.67;if(mouse.down&&this.shootCooldown<=0){this.shoot();this.shootCooldown=this.stats.attackSpeed}
+    update(){this.velocity.x=0;if(keys.a.p)this.velocity.x=-this.stats.speed;if(keys.d.p)this.velocity.x=this.stats.speed;this.x+=this.velocity.x;this.y+=this.velocity.y;if(this.y+this.height+this.velocity.y<canvas.height){this.velocity.y+=GRAVITY}else{this.velocity.y=0}let onPlatform=false;terrain.blocks.forEach(p=>{if(this.y+this.height<=p.y&&this.y+this.height+this.velocity.y>=p.y&&this.x+this.width>p.x&&this.x<p.x+p.width){this.velocity.y=0;this.y=p.y-this.height;onPlatform=true}});if(onPlatform){this.jumpsLeft=this.stats.maxJumps}if(this.x<50)this.x=50;if(this.x+this.width>canvas.width-50)this.x=canvas.width-50-this.width;if(this.shootCooldown>0)this.shootCooldown-=16.67;if(this.invincibilityTimer>0 && this.invincibilityTimer !== Infinity)this.invincibilityTimer-=16.67;if(mouse.down&&this.shootCooldown<=0){this.shoot();this.shootCooldown=this.stats.attackSpeed}
     if(this.stats.canHeal){this.regenTimer-=16.67; if(this.regenTimer<=0){this.hp=Math.min(this.stats.maxHp,this.hp+1);this.regenTimer=this.regenCooldown;}}
-    if(this.stats.hasThunderbolt){this.stats.thunderboltTimer-=16.67;if(this.stats.thunderboltTimer<=0){const dmg=50+(this.upgrades['Thunderbolt']?this.upgrades['Thunderbolt'].level*25:0);this.castThunderbolt(2,dmg);this.stats.thunderboltTimer=5e3}}if(this.stats.hasWisp&&!this.stats.wisp){this.stats.wisp=new Wisp(this)}if(this.stats.hasWisp&&this.stats.wisp){this.stats.wisp.update()}if(this.stats.novaPulse.enabled){this.stats.novaPulse.timer-=16.67;if(this.stats.novaPulse.timer<=0){enemies.forEach(e=>{if(Math.hypot(this.x-e.x,this.y-e.y)<200)e.takeDamage(this.stats.novaPulse.damage,false)});this.stats.novaPulse.timer=4000}}if(this.stats.aegis.enabled&&!this.stats.aegis.active){this.stats.aegis.timer-=16.67;if(this.stats.aegis.timer<=0)this.stats.aegis.active=true;}
+    if(this.stats.hasThunderbolt){this.stats.thunderboltTimer-=16.67;if(this.stats.thunderboltTimer<=0){this.castThunderbolt(2);this.stats.thunderboltTimer=5e3}}if(this.stats.hasWisp&&!this.stats.wisp){this.stats.wisp=new Wisp(this)}if(this.stats.hasWisp&&this.stats.wisp){this.stats.wisp.update()}if(this.stats.novaPulse.enabled){this.stats.novaPulse.timer-=16.67;if(this.stats.novaPulse.timer<=0){enemies.forEach(e=>{if(Math.hypot(this.x-e.x,this.y-e.y)<200)e.takeDamage(this.stats.novaPulse.damage,false)});this.stats.novaPulse.timer=4000}}if(this.stats.aegis.enabled&&!this.stats.aegis.active){this.stats.aegis.timer-=16.67;if(this.stats.aegis.timer<=0)this.stats.aegis.active=true;}
     if(this.stats.celestialJudgement.enabled){this.stats.celestialJudgement.timer-=16.67;if(this.stats.celestialJudgement.timer<=0){this.castCelestialJudgement();this.stats.celestialJudgement.timer=10000;}}
     if(this.stats.devilsBargain.enabled){this.stats.devilsBargain.timer-=16.67;if(this.stats.devilsBargain.timer<=0){this.takeDamage(1,false);this.stats.devilsBargain.timer=1000;}}
     this.updateActivePowers();}
@@ -258,7 +273,8 @@ class Player {
     deactivatePower(ability){if(ability.stateName==="berserk"){this.stats.damageMultiplier-=1;this.stats.attackSpeed*=2;}}
     jump(){if(this.jumpsLeft>0&&!this.stats.activePowers.warpDrive.active){playJumpSound();this.velocity.y=-this.stats.jumpStrength;this.jumpsLeft--}}
     shoot(){let angle=Math.atan2(mouse.y-(this.y+this.height/2),mouse.x-(this.x+this.width/2));if(this.stats.hasFrenzy)angle+=random(-0.5,0.5);if(this.stats.hasFrenzyPrecise)angle+=random(-0.15,0.15);let damage=this.stats.projectileDamage*this.stats.damageMultiplier;if(this.upgrades['Kinetic Converter']){damage+=this.stats.speed*0.5;}let isCrit=Math.random()<this.stats.critChance;if(isCrit){damage*=this.stats.critDamageMultiplier}const projSpeed = this.upgrades['Quickdraw'] ? 20 : 15; playerProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle)*projSpeed,Math.sin(angle)*projSpeed,this.stats.projectileSize,currentTheme.projectile,damage,isCrit,this.stats.projectileBounces,this.stats.projectilePierces));if(this.stats.hasOneShot){this.takeDamage(9999);}}
-    castThunderbolt(count,dmg){if(enemies.length===0)return;const targets=[...enemies].sort(()=>0.5-Math.random()).slice(0,count);targets.forEach(enemy=>{enemy.takeDamage(dmg,true);particles.push(new Thunderbolt(enemy.x+enemy.width/2));});}
+    // MODIFICADO: Thunderbolt agora causa dano massivo (instant kill)
+    castThunderbolt(count){if(enemies.length===0)return;const dmg = 999999;const targets=[...enemies].sort(()=>0.5-Math.random()).slice(0,count);targets.forEach(enemy=>{enemy.takeDamage(dmg,true);particles.push(new Thunderbolt(enemy.x+enemy.width/2));});}
     castCelestialJudgement(){if(enemies.length===0)return;const targetEnemy=[...enemies].sort((a,b)=>b.hp-a.hp)[0];particles.push(new CelestialBeam(targetEnemy.x+targetEnemy.width/2));setTimeout(()=>{enemies.forEach(e=>{if(Math.abs(e.x+e.width/2-targetEnemy.x-targetEnemy.width/2)<50)e.takeDamage(this.stats.celestialJudgement.damage,false)})},1000);}
     gainExp(amount){this.exp+=amount*this.stats.expMultiplier;if(this.exp>=this.expToNextLevel){this.exp-=this.expToNextLevel;this.expToNextLevel=Math.floor(this.expToNextLevel*1.65);this.level++;if(this.stats.canHeal)this.hp=this.stats.maxHp;levelColorIndex=(levelColorIndex+1)%THEMES.length;currentTheme=THEMES[levelColorIndex];generateBackground();
     if(this.level%5===0){gameState='pact';generatePactChoices();}else{gameState='levelUp';generateUpgradeChoices();}
@@ -303,7 +319,7 @@ const UPGRADES=[
     {n:"Catalyst",d:"Dano +2.",r:'c',type:'passive',levelable:true,a:p=>p.stats.projectileDamage+=2,scaling:p=>p.stats.projectileDamage+=2},{n:"Eyesight",d:"Chance de Crítico +5%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.critChance+=0.05,scaling:p=>p.stats.critChance+=0.05},{n:"Growth",d:"HP Máx. +10.",r:'c',type:'passive',levelable:true,a:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10},scaling:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10}},{n:"Resonance",d:"Vel. de Ataque +12%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.attackSpeed*=0.88,scaling:p=>p.stats.attackSpeed*=0.92},{n:"Swift",d:"Vel. de Movimento +15%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.speed*=1.15,scaling:p=>p.stats.speed*=1.15},{n:"Renew",d:"Cura para HP Máx.",r:'c',type:'passive',levelable:false,a:p=>{if(p.stats.canHeal)p.hp=p.stats.maxHp}},{n:"Quickdraw", d:"Velocidade dos projéteis +33%.", r:'c', type:'passive', levelable:false, a:p=>{p.upgrades['Quickdraw']={level:1}}},
     {n:"Leech",d:"Roubo de Vida 3%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.lifesteal+=0.03,scaling:p=>p.stats.lifesteal+=0.03},{n:"Precision",d:"Dano Crítico +50%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.critDamageMultiplier+=0.5,scaling:p=>p.stats.critDamageMultiplier+=0.5},{n:"Charge",d:"Tamanho do Projétil +20%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.projectileSize*=1.2,scaling:p=>p.stats.projectileSize*=1.1},{n:"Gush",d:"+1 Pulo (Máx. 2).",r:'u',type:'passive',levelable:false,a:p=>p.stats.maxJumps=Math.min(2,p.stats.maxJumps+1)},{n:"Adrenaline Rush",d:"Ganha vel. de movimento ao levar dano.",r:'u',type:'passive',levelable:false,a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){this.stats.speed*=1.5;setTimeout(()=>this.stats.speed/=1.5,1500)}}}},{n:"Piercing Shots",d:"Projéteis perfuram 1 inimigo extra.",r:'u',type:'passive',levelable:true,a:p=>p.stats.projectilePierces++,scaling:p=>p.stats.projectilePierces++},{n:"Steady Hand",d:"Reduz a imprecisão de 'Frenesi Caótico'.",r:'u',type:'passive',levelable:false,a:p=>{p.upgrades['Steady Hand']={level:1};if(p.stats.hasFrenzy){p.stats.hasFrenzy=false; p.stats.hasFrenzyPrecise=true;}}},
     {n:"Wound",d:"Projéteis aplicam sangramento.",r:'r',l:"Sangramento causa 2 de dano/s por 3s.",type:'passive',levelable:false,a:p=>p.stats.canBleed=true},{n:"Thunderbolt",d:"Conjura 2 raios a cada 5s.",r:'r',l:"Aumente o nível para mais dano.",type:'passive',levelable:true,a:p=>p.stats.hasThunderbolt=true,scaling:p=>{}},{n:"Will-O-Wisp",d:"Invoca um Wisp familiar.",r:'r',l:"Dano do Wisp escala com nível.",type:'passive',levelable:true,a:p=>p.stats.hasWisp=true,scaling:p=>{}},{n:"Nova Pulse",d:"Emite um pulso de dano a cada 4s.",r:'r',l:"Dano aumenta com nível.",type:'passive',levelable:true,a:p=>p.stats.novaPulse.enabled=true,scaling:p=>p.stats.novaPulse.damage+=15},{n:"Chain Lightning",d:"Proj. têm 15% de chance de ricochetear.",r:'r',l:"Chance aumenta com nível.",type:'passive',levelable:true,a:p=>p.stats.chainChance+=0.15,scaling:p=>p.stats.chainChance+=0.15},{n:"Ricochet",d:"Projéteis quicam nas paredes.",r:'r',l:"Aumente o nível para mais quiques.",type:'passive',levelable:true,a:p=>p.stats.projectileBounces+=1,scaling:p=>p.stats.projectileBounces+=1},{n:"Explosive Rounds", d:"15% de chance dos projéteis explodirem em área.", r:'r', type:'passive', levelable:true, a:p=>{p.upgrades['Explosive Rounds']?p.upgrades['Explosive Rounds'].level++:p.upgrades['Explosive Rounds']={level:1}}, scaling:p=>{}},
-    {n:"Aegis Shield",d:"Um escudo bloqueia um golpe a cada 15s.",r:'l',l:"Cooldown diminui com nível.",type:'passive',levelable:true,a:p=>p.stats.aegis.enabled=true,scaling:p=>p.stats.aegis.cooldown=Math.max(5000,p.stats.aegis.cooldown-2000)},{n:"Appraisal",d:"+1 escolha de carta permanentemente.",r:'l',type:'passive',levelable:false,a:p=>p.stats.upgradeChoices++},{n:"Overheat",d:"Seu corpo causa dano de contato.",r:'l',type:'passive',levelable:true,a:p=>p.stats.contactDamage+=20,scaling:p=>p.stats.contactDamage+=20},{n:"Immortal",d:"+1 Reviver.",r:'l',type:'passive',levelable:false,a:p=>p.stats.revives++},{n:"Temporal Anomaly",d:"10% de chance de congelar inimigos por 1s.",r:'l',l:"Congelamento não afeta chefes.",type:'passive',levelable:false,a:p=>{const o=Enemy.prototype.takeDamage;Enemy.prototype.takeDamage=function(a,f){o.call(this,a,f);if(f&&this.type!=='boss'&&Math.random()<0.1){this.isFrozen=true;setTimeout(()=>this.isFrozen=false,1000)}}}},{n:"Vengeful Spirit", d:"Ao levar dano, libera 3 projéteis teleguiados.", r:'l', type:'passive', levelable:false, a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){for(let i=0;i<3;i++){const target=enemies[Math.floor(Math.random()*enemies.length)];if(target)playerProjectiles.push(new HomingProjectile(this.x,this.y,target,5,'#FF8A80',15));}}}}}, {n:"Kinetic Converter",d:"Ganha dano extra com base na sua vel. de movimento.",r:'l',type:'passive',levelable:false,a:p=>{p.upgrades['Kinetic Converter']={level:1}}},{n:"Aegis Barrier",d:"Fique imune por 5s.",r:'l',type:'active',stateName:'aegis',duration:5000,cooldown:40000,levelable:false},{n:"Chrono-Shift",d:"Desacelera todos os inimigos por 4s.",r:'l',type:'active',stateName:'chronoShift',duration:4000,cooldown:50000,levelable:false},{n:"Berserker's Rage",d:"Dano e vel. de ataque massivos por 8s.",r:'l',type:'active',stateName:'berserk',duration:8000,cooldown:60000,levelable:false},
+    {n:"Aegis Shield",d:"Um escudo bloqueia um golpe a cada 15s.",r:'l',l:"Cooldown diminui com nível.",type:'passive',levelable:true,a:p=>p.stats.aegis.enabled=true,scaling:p=>p.stats.aegis.cooldown=Math.max(5000,p.stats.aegis.cooldown-2000)},{n:"Appraisal",d:"+1 escolha de carta permanentemente.",r:'l',type:'passive',levelable:false,a:p=>p.stats.upgradeChoices++},{n:"Overheat",d:"Seu corpo causa dano de contato.",r:'l',type:'passive',levelable:true,a:p=>p.stats.contactDamage+=20,scaling:p=>p.stats.contactDamage+=20},{n:"Immortal",d:"+1 Reviver.",r:'l',type:'passive',levelable:false,a:p=>p.stats.revives++},{n:"Temporal Anomaly",d:"10% de chance de congelar inimigos por 1s.",r:'l',l:"Congelamento não afeta chefes.",type:'passive',levelable:false,a:p=>{const o=Enemy.prototype.takeDamage;Enemy.prototype.takeDamage=function(a,f){o.call(this,a,f);if(f&&this.type!=='boss'&&Math.random()<0.1){this.isFrozen=true;setTimeout(()=>this.isFrozen=false,1000)}}}},{n:"Vengeful Spirit", d:"Ao levar dano, libera 3 projéteis teleguiados.", r:'l', type:'passive', levelable:false, a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){for(let i=0;i<3;i++){const target=enemies[Math.floor(Math.random()*enemies.length)];if(target)playerProjectiles.push(new HomingProjectile(this.x,this.y,target,5,'#FF8A80',15));}}}}}, {n:"Kinetic Converter",d:"Ganha dano extra com base na sua vel. de movimento.",r:'l',type:'passive',levelable:false,a:p=>{p.upgrades['Kinetic Converter']={level:1}}},{n:"Aegis Barrier",d:"Fique imune por 5s.",r:'l',type:'active',stateName:'aegis',duration:5000,cooldown:40000,levelable:false},{n:"Chrono-Shift",d:"Desacelera todos os inimigos por 4s.",r:'l',type:'active',stateName:'chronoShift',duration:4000,cooldown:50000,levelable:false},{n:"Berserker\'s Rage",d:"Dano e vel. de ataque massivos por 8s.",r:'l',type:'active',stateName:'berserk',duration:8000,cooldown:60000,levelable:false},
     {n:"Celestial Judgment",d:"Conjura um raio celestial a cada 10s.",r:'mythic',l:"O raio causa dano massivo em área.",type:'passive',levelable:true,a:p=>p.stats.celestialJudgement.enabled=true,scaling:p=>p.stats.celestialJudgement.damage+=100},{n:"Singularity",d:"Puxa todos os inimigos e causa dano.",r:'mythic',type:'active',stateName:'singularity',duration:500,cooldown:45000,levelable:false},{n:"Warp Drive",d:"Um dash rápido que causa dano e te deixa imune.",r:'mythic',type:'active',stateName:'warpDrive',duration:200,cooldown:3000,levelable:false},{n:"Reaper's Scythe",d:"Inimigos explodem ao morrer, causando 25% de sua vida máx. como dano em área.",r:'mythic',type:'passive',levelable:false,a:p=>{p.upgrades["Reaper's Scythe"]={level:1}}},
     {n:"Glass Cannon",d:"+100% Dano, -50% HP Máx.",r:'cursed',type:'passive',levelable:false,a:p=>{p.stats.damageMultiplier*=2;p.stats.maxHp=Math.ceil(p.stats.maxHp*0.5);p.hp=Math.min(p.hp,p.stats.maxHp)}},{n:"Blood Pact",d:"-25% HP Máx. por +40% de Dano.",r:'cursed',type:'passive',levelable:false,a:p=>{p.stats.maxHp=Math.ceil(p.stats.maxHp*0.75);p.hp=Math.min(p.hp,p.stats.maxHp);p.stats.damageMultiplier+=0.4}},
 ];
@@ -327,10 +343,8 @@ class Enemy{constructor(type,x,y){
     const baseDifficulty = cappedDifficultyValue;
     const diffMod=DIFFICULTY_MODS[gameDifficulty];
     this.type=type;this.x=x;this.y=y;this.velocity={x:0,y:0};this.isPulled=false;this.isFrozen=false;switch(type){case'watcher':this.width=40;this.height=30;this.hp=Math.floor(12*baseDifficulty*diffMod.hp);this.damage=Math.floor(8*baseDifficulty*diffMod.dmg);this.speed=random(1.5,2.5)*diffMod.spd;this.expValue=Math.floor(30*baseDifficulty);break;case'brute':this.width=45;this.height=45;this.hp=Math.floor(50*baseDifficulty*diffMod.hp);this.damage=Math.floor(20*baseDifficulty*diffMod.dmg);this.speed=random(0.5,1)*diffMod.spd;this.expValue=Math.floor(50*baseDifficulty);break;case'specter':this.width=35;this.height=45;this.hp=Math.floor(25*baseDifficulty*diffMod.hp);this.damage=Math.floor(15*baseDifficulty*diffMod.dmg);this.speed=random(0.8,1.2)*diffMod.spd;this.expValue=Math.floor(40*baseDifficulty);break;case'jester':this.width=30;this.height=40;this.hp=Math.floor(20*baseDifficulty*diffMod.hp);this.damage=Math.floor(12*baseDifficulty*diffMod.dmg);this.speed=random(1,1.5)*diffMod.spd;this.expValue=Math.floor(45*baseDifficulty);this.jesterTimer=random(1000,2000);break;case'boss':this.width=100;this.height=100;this.hp=2000*baseDifficulty*diffMod.hp;this.damage=40*diffMod.dmg;this.speed=1.5*diffMod.spd;this.expValue=1e3;this.attackPattern=['multiShot','quake','meteor'];
-    // NOVO: Padrão de ataque enfurecido
     this.enragedAttackPattern = ['shotgunBlast', 'multiShot', 'quake'];
     this.currentAttackIndex=0;this.attackTimer=5000;this.quakeWarningTimer=0;this.quakeActive=false;this.meteorTimers=[null,null,null];this.isEnraged=false;this.enrageHelperTimer=5000;
-    // NOVO: Timer para o QTE
     this.qteTimer = random(8000, 12000);
     break;case'imp':default:this.width=30;this.height=30;this.hp=Math.floor(15*baseDifficulty*diffMod.hp);this.damage=Math.floor(10*baseDifficulty*diffMod.dmg);this.speed=random(1,2)*diffMod.spd;this.expValue=Math.floor(25*baseDifficulty);break;}this.maxHp=this.hp;this.shootCooldown=random(1500,3e3);this.descendY=canvas.height*0.6-random(0,150);this.isDescending=true;
 this.isBleeding=false; this.bleedDamagePerTick=0; this.bleedTicksLeft=0; this.bleedTickInterval=1000; this.bleedTickTimer=0;
@@ -347,31 +361,24 @@ bossUpdate(){
     if(this.hp/this.maxHp < 0.35 && !this.isEnraged){
         this.isEnraged=true;
         this.attackTimer=1500;
-        this.currentAttackIndex = 0; // Reinicia o índice do padrão de ataque
+        this.currentAttackIndex = 0;
     }
-
     if(this.isEnraged){
-        // MODIFICADO: Invoca 2 ajudantes
         this.enrageHelperTimer -= 16.67;
         if(this.enrageHelperTimer <= 0){
             enemies.push(new Enemy('imp', this.x - 30, -50));
             enemies.push(new Enemy('imp', this.x + this.width, -50));
             this.enrageHelperTimer = 5000;
         }
-
-        // NOVO: Lógica do QTE
         this.qteTimer -= 16.67;
         if (this.qteTimer <= 0 && !qteState.active) {
             triggerQTE();
-            this.qteTimer = random(10000, 15000); // Agenda o próximo QTE
+            this.qteTimer = random(10000, 15000);
         }
     }
-
     if(this.attackTimer<=0){
-        // Usa o padrão de ataque correto (normal ou enfurecido)
         const currentPattern = this.isEnraged ? this.enragedAttackPattern : this.attackPattern;
         const nextAttack = currentPattern[this.currentAttackIndex];
-
         switch(nextAttack){
             case 'multiShot':
                 for(let i=-2;i<=2;i++){
@@ -379,25 +386,18 @@ bossUpdate(){
                     enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.2)*5,Math.sin(angle+i*0.2)*5,10,'#FF5722',this.damage,false))
                 }
                 break;
-            // NOVO: Ataque em leque
             case 'shotgunBlast':
                 for(let i = -4; i <= 4; i++){
                      const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2));
                      enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.15)*6,Math.sin(angle+i*0.15)*6,8,'#FF1744',this.damage*0.8,false))
                 }
                 break;
-            case 'quake':
-                this.quakeWarningTimer=1000;
-                playQuakeSound();
-                break;
-            case 'meteor':
-                for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0)this.meteorTimers[i]=new Meteor()},i*300);
-                break;
+            case 'quake': this.quakeWarningTimer=1000; playQuakeSound(); break;
+            case 'meteor': for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0)this.meteorTimers[i]=new Meteor()},i*300); break;
         }
         this.currentAttackIndex=(this.currentAttackIndex+1) % currentPattern.length;
-        this.attackTimer = this.isEnraged ? 2500 : 5000; // Ataque mais rápido quando enfurecido
+        this.attackTimer = this.isEnraged ? 2500 : 5000;
     }
-
     if(this.quakeWarningTimer>0){
         this.quakeWarningTimer-=16.67;
         if(this.quakeWarningTimer<=0){
@@ -407,8 +407,15 @@ bossUpdate(){
     }
     this.meteorTimers.forEach((m,i)=>{if(m){m.update();if(m.dead)this.meteorTimers[i]=null;}});
 }
-takeDamage(amount,fromProjectile){this.hp-=amount;floatingTexts.push(new FloatingText(this.x,this.y,Math.round(amount),'white'));if(fromProjectile&&player.stats.canHeal&&player.stats.lifesteal>0){player.hp=Math.min(player.stats.maxHp,player.hp+amount*player.stats.lifesteal)}
-if(fromProjectile&&player.stats.canBleed&&!this.isBleeding){this.isBleeding=true;this.bleedDamagePerTick=2;this.bleedTicksLeft=3;this.bleedTickTimer=this.bleedTickInterval;}}}
+takeDamage(amount,fromProjectile){
+    this.hp-=amount;
+    if (fromProjectile) {
+        playEnemyHitSound(); // Toca som de hit
+        if(player.stats.canHeal&&player.stats.lifesteal>0){player.hp=Math.min(player.stats.maxHp,player.hp+amount*player.stats.lifesteal)}
+        if(player.stats.canBleed&&!this.isBleeding){this.isBleeding=true;this.bleedDamagePerTick=2;this.bleedTicksLeft=3;this.bleedTickTimer=this.bleedTickInterval;}
+    }
+    floatingTexts.push(new FloatingText(this.x,this.y,Math.round(amount),'white'));
+}}
 const originalEnemyTakeDamage = Enemy.prototype.takeDamage;
 class Particle{constructor(x,y,vx,vy,s,c,l){this.x=x;this.y=y;this.v={x:vx,y:vy};this.s=s;this.c=c;this.l=l;this.il=l}draw(){ctx.globalAlpha=this.l/this.il;ctx.fillStyle=this.c;ctx.fillRect(this.x,this.y,this.s,this.s);ctx.globalAlpha=1}update(){this.x+=this.v.x;this.y+=this.v.y;this.l--}}
 class Thunderbolt extends Particle{constructor(x){super(x,0,0,0,0,'y',30);this.seg=20;this.path=[{x:x,y:0}];for(let i=1;i<this.seg;i++){this.path.push({x:this.path[i-1].x+random(-20,20),y:canvas.height/this.seg*i})}}draw(){ctx.save();ctx.globalAlpha=this.l/this.il;ctx.shadowColor='#FDE047';ctx.shadowBlur=15;ctx.strokeStyle='#FBC02D';ctx.lineWidth=random(3,6);ctx.beginPath();ctx.moveTo(this.path[0].x,this.path[0].y);for(let i=1;i<this.seg;i++){ctx.lineTo(this.path[i].x,this.path[i].y)}ctx.stroke();ctx.restore();}}
@@ -434,7 +441,6 @@ if(enemy.type==='boss'){
     bossIsActive=false;
     gameState='bossReward';
     generateBossRewardChoices();
-    // A dificuldade agora será resetada APÓS o jogador escolher a recompensa.
 }
 if(player.upgrades["Reaper's Scythe"]){enemies.forEach(e=>{if(e!==enemy&&Math.hypot(enemy.x-e.x,enemy.y-e.y)<100)e.takeDamage(enemy.maxHp*0.25,false)})}
 playKillSound();if(!gameData.settings.performanceMode){for(let p=0;p<15;p++){particles.push(new Particle(enemy.x+enemy.width/2,enemy.y+enemy.height/2,random(-3,3),random(-3,3),random(2,5),currentTheme.highlight,random(30,60)))}}player.gainExp(enemy.expValue);score+=enemy.expValue;enemies.splice(i,1);}
@@ -449,7 +455,7 @@ function setupMenus(){
     ];
     pauseButtons=[
         {x:canvas.width/2-100,y:300,w:200,h:50,text:'Resume',action:()=>{playClickSound();gameState='playing';if(ytPlayer)ytPlayer.playVideo();}},
-        {x:canvas.width/2-100,y:360,w:200,h:50,text:'Quit to Menu',action:()=>{playClickSound();gameState='menu';menuState='main';fetchLeaderboard();}}
+        {x:canvas.width/2-100,y:360,w:200,h:50,text:'Quit to Menu',action:()=>{playClickSound();gameState='menu';menuState='main';fetchLeaderboard(); if (isGodModeActive) toggleGodMode();}}
     ];
     settingsButtons=[
         {x:canvas.width/2-150,y:300,w:300,h:50,text:'Quality',type:'quality',action:()=>{playClickSound();if(gameData.settings.performanceMode){gameData.settings.performanceMode=false;saveGameData();generateBackground()}}},
@@ -463,7 +469,7 @@ function setupMenus(){
 function drawMenu(){ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);ctx.textAlign='center';
     if(menuState==='main'){ctx.save();ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillStyle=currentTheme.highlight;ctx.font=`54px ${FONT_PRIMARY}`;ctx.fillText("Seraph's Lag Stand",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`12px ${FONT_PRIMARY}`;ctx.fillText("(sim, eu pensei nesse nome)",canvas.width/2,180);ctx.restore();drawPlayerSprite({x:canvas.width/2-16,y:350,width:32,height:48,invincibilityTimer:0},currentTheme);menuButtons.forEach(btn=>drawButton(btn));drawLeaderboard(850,250,400,400);}
     else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);}
-    else if(menuState==='binds'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Key Binds",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F - Active Ability 1","G - Active Ability 2","J - Active Ability 3","ESC - Pause Game"];binds.forEach((b,i)=>{ctx.fillText(b,canvas.width/2,250+i*40);});bindsButtons.forEach(btn=>drawButton(btn));}}
+    else if(menuState==='binds'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Key Binds",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F - Active Ability 1","G - Active Ability 2","J - Active Ability 3","ESC - Pause Game", "", "LPLP - ???"];binds.forEach((b,i)=>{ctx.fillText(b,canvas.width/2,250+i*40);});bindsButtons.forEach(btn=>drawButton(btn));}}
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
 function drawButton(btn){
     ctx.save();
@@ -498,9 +504,9 @@ ctx.fillStyle='#FFFFFF';ctx.font=`12px ${FONT_PRIMARY}`;const words=card.d.split
 function formatTime(milliseconds){if(typeof milliseconds!=='number'||milliseconds<0)return'00:00';const totalSeconds=Math.floor(milliseconds/1000);const minutes=Math.floor(totalSeconds/60);const seconds=totalSeconds%60;return`${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;}
 function drawLeaderboard(x, y, w, h){ctx.save();ctx.fillStyle='rgba(0,0,0,0.5)';ctx.strokeStyle=currentTheme.highlight;ctx.lineWidth=2;ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`20px ${FONT_PRIMARY}`;ctx.fillText('LEADERBOARD',x+w/2,y+40);ctx.font=`12px ${FONT_PRIMARY}`;const startY=y+80;const lineHeight=30;const startX=x+20;ctx.textAlign='left';ctx.fillStyle='#AAAAAA';ctx.fillText('RANK',startX,startY-20);ctx.fillText('NICKNAME',startX+70,startY-20);ctx.textAlign='right';ctx.fillText('TIME',startX+w-40,startY-20);if(leaderboardData.length===0){ctx.textAlign='center';ctx.fillStyle='white';ctx.fillText("LOADING...",x+w/2,startY+20);}else{leaderboardData.forEach((entry,index)=>{const yPos=startY+index*lineHeight;
     let entryColor = 'white';
-    if (index === 0) { entryColor = '#FFD700'; } // Gold
-    else if (index === 1) { entryColor = '#C0C0C0'; } // Silver
-    else if (index === 2) { entryColor = '#CD7F32'; } // Bronze
+    if (index === 0) { entryColor = '#FFD700'; }
+    else if (index === 1) { entryColor = '#C0C0C0'; }
+    else if (index === 2) { entryColor = '#CD7F32'; }
     else if (entry.nickname === playerNickname) { entryColor = '#FBC02D'; }
     ctx.fillStyle = entryColor;
 
@@ -511,6 +517,7 @@ function initGame(){
     player=new Player;gameTime=0;score=0;enemies=[];playerProjectiles=[];enemyProjectiles=[];particles=[];floatingTexts=[];backgroundSpaceships=[];spaceshipSpawnTimer=5000;enemySpawnTimer=12e3;bossTimer=18e4;bossIsActive=false;eventTimer=random(15e3,3e4);levelColorIndex=0;currentTheme=THEMES[0];
     difficultyIsCapped = false;
     cappedDifficultyValue = 1;
+    if (isGodModeActive) toggleGodMode(); // Desativa o modo deus se estiver ativo
     generateBackground();
     if(ytPlayer&&typeof ytPlayer.playVideo==='function' && ytPlayer.getPlayerState() !== 1){ytPlayer.playVideo();}}
 function updatePlaying(){
@@ -523,75 +530,82 @@ function updatePlaying(){
 
     if(bossTimer<=0&&!bossIsActive){playBossSpawnSound();enemies.push(new Enemy('boss',canvas.width/2,-100));bossIsActive=true;bossTimer=18e4}if(!bossIsActive)spawnEnemies();if(!gameData.settings.performanceMode){spawnSpaceship();backgroundSpaceships.forEach(s=>s.update());backgroundSpaceships=backgroundSpaceships.filter(s=>!s.dead);}
     
-    updateQTE(); // NOVO: Atualiza o estado do QTE
+    updateQTE();
     
     [...enemies,...playerProjectiles,...enemyProjectiles,...particles,...floatingTexts].forEach(o=>o.update());if(player){player.update();}if(player&&player.stats.wisp)player.stats.wisp.update();handleCollisions();particles=particles.filter(p=>p.l>0);floatingTexts=floatingTexts.filter(ft=>ft.lifespan>0);playerProjectiles=playerProjectiles.filter(p=>p.x>-p.radius&&p.x<canvas.width+p.radius&&p.y>-p.radius&&p.y<canvas.height+p.radius);enemyProjectiles=enemyProjectiles.filter(p=>p.x>-p.radius&&p.x<canvas.width+p.radius&&p.y>-p.radius&&p.y<canvas.height+p.radius)
 }
 function drawPlaying(){ctx.save();if(screenShake.active&&screenShake.duration>0){ctx.translate(random(-screenShake.magnitude,screenShake.magnitude),random(-screenShake.magnitude,screenShake.magnitude));}ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);const boss=enemies.find(e=>e.type==='boss');if(boss&&boss.quakeWarningTimer>0){const alpha=0.3*Math.abs(Math.sin(boss.quakeWarningTimer*0.01));ctx.fillStyle=`rgba(255,0,0,${alpha})`;terrain.blocks.forEach(b=>{ctx.fillRect(b.x,b.y,b.width,b.height)})}
 if(boss){boss.meteorTimers.forEach(m=>{if(m&&!m.visible){const indicatorSize=20;ctx.save();ctx.translate(m.x,30);ctx.fillStyle='red';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-indicatorSize,indicatorSize);ctx.lineTo(indicatorSize,indicatorSize);ctx.closePath();ctx.fill();ctx.restore();}if(m)m.draw();});}
 if(gameState!=='gameOver' && player){player.draw(currentTheme);if(player.stats.wisp)player.stats.wisp.draw();}enemies.forEach(e=>e.draw(currentTheme));playerProjectiles.forEach(p=>p.draw());enemyProjectiles.forEach(p=>p.draw());particles.forEach(p=>p.draw());floatingTexts.forEach(ft=>ft.draw());
-drawQTE(); // NOVO: Desenha a UI do QTE
+drawQTE();
 ctx.restore();
 }
-// --- NOVAS FUNÇÕES PARA O QTE ---
+// --- QUICK-TIME EVENT (QTE) FUNCTIONS ---
 function triggerQTE() {
     const possibleKeys = ['W', 'A', 'S', 'D'];
     qteState.active = true;
     qteState.keyToPress = possibleKeys[Math.floor(Math.random() * possibleKeys.length)];
     qteState.timer = qteState.maxTime;
-    qteState.success = null; // null = em andamento, true = sucesso, false = falha
+    qteState.success = null;
 }
 function updateQTE() {
     if (!qteState.active) return;
-
     qteState.timer -= 16.67;
-
     if (qteState.timer <= 0 && qteState.success === null) {
-        // Falha por tempo
         qteState.success = false;
         qteState.active = false;
         if (player) {
             player.takeDamage(15);
             floatingTexts.push(new FloatingText(player.x, player.y-30, 'FALHOU!', '#FF1744'));
-            playHitSound();
+            playDamageSound();
         }
     }
 }
 function drawQTE() {
     if (!qteState.active || !player) return;
-
-    const boxWidth = 300;
-    const boxHeight = 150;
+    const boxWidth = 300; const boxHeight = 150;
     const boxX = canvas.width / 2 - boxWidth / 2;
     const boxY = canvas.height / 2 - boxHeight / 2 - 100;
-
-    // Fundo
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 3;
-    ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3; ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
     ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-
-    // Sprite do jogador
     drawPlayerSprite({x: boxX + 30, y: boxY + 50, width: 32, height: 48, invincibilityTimer: 0}, currentTheme);
-
-    // Tecla
-    ctx.fillStyle = '#FFFFFF';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 8;
-    ctx.textAlign = 'center';
-    ctx.font = `80px ${FONT_PRIMARY}`;
+    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 8; ctx.textAlign = 'center'; ctx.font = `80px ${FONT_PRIMARY}`;
     ctx.strokeText(qteState.keyToPress, boxX + boxWidth/2 + 40, boxY + boxHeight / 2 + 30);
     ctx.fillText(qteState.keyToPress, boxX + boxWidth/2 + 40, boxY + boxHeight / 2 + 30);
-
-    // Barra de tempo
-    const timerBarWidth = boxWidth - 20;
-    const timerBarHeight = 10;
+    const timerBarWidth = boxWidth - 20; const timerBarHeight = 10;
     const currentTimerWidth = timerBarWidth * (qteState.timer / qteState.maxTime);
     ctx.fillStyle = '#444';
     ctx.fillRect(boxX + 10, boxY + boxHeight - 20, timerBarWidth, timerBarHeight);
     ctx.fillStyle = '#FBC02D';
     ctx.fillRect(boxX + 10, boxY + boxHeight - 20, currentTimerWidth, timerBarHeight);
+}
+
+// --- NOVO: FUNÇÃO PARA ATIVAR/DESATIVAR MODO DEUS ---
+function toggleGodMode() {
+    if (!player) return;
+    isGodModeActive = !isGodModeActive;
+    if (isGodModeActive) {
+        // Salva os stats originais antes de modificá-los
+        player.godModeOriginals = {
+            damageMultiplier: player.stats.damageMultiplier,
+            attackSpeed: player.stats.attackSpeed,
+            invincibilityTimer: player.invincibilityTimer
+        };
+        player.stats.damageMultiplier = 99999; // Dano infinito
+        player.stats.attackSpeed = 50; // Vel. de ataque máxima
+        player.invincibilityTimer = Infinity; // Invencibilidade
+        floatingTexts.push(new FloatingText(player.x, player.y - 40, "GOD MODE: ON", "#00FF00"));
+    } else {
+        // Restaura os stats originais
+        if (player.godModeOriginals) {
+            player.stats.damageMultiplier = player.godModeOriginals.damageMultiplier;
+            player.stats.attackSpeed = player.godModeOriginals.attackSpeed;
+            player.invincibilityTimer = player.godModeOriginals.invincibilityTimer > 0 ? player.godModeOriginals.invincibilityTimer : 0;
+        }
+        floatingTexts.push(new FloatingText(player.x, player.y - 40, "GOD MODE: OFF", "#FF0000"));
+    }
 }
 
 function animate(){requestAnimationFrame(animate);if(gameState==='intro'){ctx.fillStyle='black';ctx.fillRect(0,0,canvas.width,canvas.height);return;}ctx.clearRect(0,0,canvas.width,canvas.height);if(restartTimer>0)restartTimer-=16.67;if(screenShake.active&&screenShake.duration>0){screenShake.duration-=16.67;}else{screenShake.active=false;}
@@ -600,22 +614,49 @@ switch(gameState){case'menu':drawMenu();break;case'playing':if(player){updatePla
 window.addEventListener('keydown',e=>{
     if(gameState==='intro')return;
 
-    // NOVO: Lógica de input para o QTE
-    if (qteState.active && qteState.success === null) {
-        if (e.key.toUpperCase() === qteState.keyToPress) {
-            qteState.success = true;
-            qteState.active = false;
-            floatingTexts.push(new FloatingText(player.x, player.y - 30, 'SUCESSO!', '#76FF03'));
-            playPowerUpSound();
-            return; // Impede que a tecla afete o movimento do jogador
+    // Lógica do Cheat Code
+    if (player) {
+        keySequence.push(e.key.toUpperCase());
+        if (keySequence.length > 4) {
+            keySequence.shift(); // Mantém a sequência com apenas 4 teclas
+        }
+        if (keySequence.join('') === 'LPLP') {
+            toggleGodMode();
+            keySequence = []; // Reseta a sequência para não reativar
         }
     }
 
-    if(e.code==='Escape'&&(gameState==='playing'||gameState==='paused')){playClickSound();if(gameState==='playing'){gameState='paused';if(ytPlayer)ytPlayer.pauseVideo();}else{gameState='playing';if(ytPlayer)ytPlayer.playVideo();};return;}if(gameState!=='playing'||!player)return;switch(e.code){case'KeyA':keys.a.p=true;break;case'KeyD':keys.d.p=true;break;
-    // Adiciona W e S para o QTE, mas não para o movimento
-    case'KeyW':keys.w.p=true;break;case'KeyS':keys.s.p=true;break;
-    case'Space':if(!keys.space.p){player.jump();keys.space.p=true}break;case'KeyF':if(!keys.f.p){player.activatePower('f');keys.f.p=true}break;case'KeyG':if(!keys.g.p){player.activatePower('g');keys.g.p=true}break;case'KeyJ':if(!keys.j.p){player.activatePower('j');keys.j.p=true}break;}});
-window.addEventListener('keyup',e=>{if(gameState!=='playing'||!player)return;switch(e.code){case'KeyA':keys.a.p=false;break;case'KeyD':keys.d.p=false;break;case'KeyW':keys.w.p=false;break;case'KeyS':keys.s.p=false;break;case'Space':keys.space.p=false;break;case'KeyF':keys.f.p=false;break;case'KeyG':keys.g.p=false;break;case'KeyJ':keys.j.p=false;break;}});
+    if (qteState.active && qteState.success === null) {
+        if (e.key.toUpperCase() === qteState.keyToPress) {
+            qteState.success = true; qteState.active = false;
+            floatingTexts.push(new FloatingText(player.x, player.y - 30, 'SUCESSO!', '#76FF03'));
+            playPowerUpSound();
+            return;
+        }
+    }
+
+    if(e.code==='Escape'&&(gameState==='playing'||gameState==='paused')){playClickSound();if(gameState==='playing'){gameState='paused';if(ytPlayer)ytPlayer.pauseVideo();}else{gameState='playing';if(ytPlayer)ytPlayer.playVideo();};return;}if(gameState!=='playing'||!player)return;
+    switch(e.code){
+        case'KeyA':keys.a.p=true;break;case'KeyD':keys.d.p=true;break;
+        case'KeyW':keys.w.p=true;break;case'KeyS':keys.s.p=true;break;
+        case'KeyL':keys.l.p=true;break;case'KeyP':keys.p.p=true;break;
+        case'Space':if(!keys.space.p){player.jump();keys.space.p=true}break;
+        case'KeyF':if(!keys.f.p){player.activatePower('f');keys.f.p=true}break;
+        case'KeyG':if(!keys.g.p){player.activatePower('g');keys.g.p=true}break;
+        case'KeyJ':if(!keys.j.p){player.activatePower('j');keys.j.p=true}break;
+    }
+});
+window.addEventListener('keyup',e=>{
+    if(gameState!=='playing'||!player)return;
+    switch(e.code){
+        case'KeyA':keys.a.p=false;break;case'KeyD':keys.d.p=false;break;
+        case'KeyW':keys.w.p=false;break;case'KeyS':keys.s.p=false;break;
+        case'KeyL':keys.l.p=false;break;case'KeyP':keys.p.p=false;break;
+        case'Space':keys.space.p=false;break;
+        case'KeyF':keys.f.p=false;break;case'KeyG':keys.g.p=false;break;
+        case'KeyJ':keys.j.p=false;break;
+    }
+});
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;if(gameState==='menu'&&menuState==='settings'&&mouse.down){const s={x:canvas.width/2-150,y:460,w:300};if(mouse.x>=s.x&&mouse.x<=s.x+s.w){let v=Math.round((mouse.x-s.x)/s.w*100);gameData.settings.volume=Math.max(0,Math.min(100,v));if(ytPlayer)ytPlayer.setVolume(gameData.settings.volume)}}});
 canvas.addEventListener('mousedown',()=>{mouse.down=true});
 canvas.addEventListener('mouseup',()=>{mouse.down=false;if(gameState==='menu'&&menuState==='settings'){saveGameData();}});
@@ -627,16 +668,14 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         const choices = isBossReward ? currentBossRewardChoices : currentUpgradeChoices;
         const cW=220,cH=320,gap=30;const tW=choices.length*cW+(choices.length-1)*gap;const sX=(canvas.width-tW)/2;const y=canvas.height/2-cH/2;choices.forEach((card,index)=>{const x=sX+index*(cW+gap);if(mouse.x>x&&mouse.x<x+cW&&mouse.y>y&&mouse.y<y+cH){playClickSound();if(card.type==='active'){if(!player.activeAbilities.f)player.activeAbilities.f=card;else if(!player.activeAbilities.g)player.activeAbilities.g=card;else if(!player.activeAbilities.j)player.activeAbilities.j=card;}else{const pUpgrade=player.upgrades[card.n];if(pUpgrade){if(pUpgrade.level<MAX_LEVEL){pUpgrade.level++;if(card.scaling)card.scaling(player);}}else{player.upgrades[card.n]={level:1};card.a(player);}}
         
-        // MODIFICADO: Lógica de reinício do ciclo após a recompensa do chefe
         if (isBossReward) {
-            difficultyIsCapped = false; // Permite que a dificuldade volte a aumentar
-            cappedDifficultyValue = 1; // Reseta o valor da dificuldade
-            gameTime = 0; // Reseta o tempo, reiniciando o spawn de inimigos fortes
-            bossTimer = 180000; // Reseta o timer do próximo chefe
-            enemies = []; // Limpa os inimigos restantes da tela
+            difficultyIsCapped = false;
+            cappedDifficultyValue = 1;
+            gameTime = 0;
+            bossTimer = 180000;
+            enemies = [];
             floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, 'NOVO CICLO!', 'lime'));
         }
-
         gameState='playing'
     }})}
     else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH){playClickSound();card.a(player);gameState='playing';}});
