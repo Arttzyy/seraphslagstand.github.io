@@ -186,8 +186,10 @@ function drawPlayerSprite(p,theme){
     if(!gameData.settings.performanceMode){ ctx.fillStyle=`rgba(0,0,0,0.4)`; ctx.beginPath(); ctx.ellipse(x+p.width/2,y+p.height,p.width*.7,p.height*.15,0,0,Math.PI*2); ctx.fill(); }
     
     // Corpo
-    const bodyColor = p.invincibilityTimer > 0 ? '#FFFFFF' : '#FFFFFF';
-    ctx.fillStyle = bodyColor;
+    const bodyGradient = ctx.createLinearGradient(x, y + 20, x, y + p.height);
+    bodyGradient.addColorStop(0, p.invincibilityTimer > 0 ? '#FFFFFF' : '#E0E0E0');
+    bodyGradient.addColorStop(1, p.invincibilityTimer > 0 ? '#BDBDBD' : '#9E9E9E');
+    ctx.fillStyle = bodyGradient;
     ctx.fillRect(x, y + 20, p.width, p.height - 20);
 
     // Capacete/Topo
@@ -257,15 +259,19 @@ class Enemy{constructor(type,x,y){
         case'brute': baseStats = {w:45,h:45,hp:50,dmg:20,spd:random(0.5,1),exp:50}; break;
         case'specter': baseStats = {w:35,h:45,hp:25,dmg:15,spd:random(0.8,1.2),exp:40}; break;
         case'jester': baseStats = {w:30,h:40,hp:20,dmg:12,spd:random(1,1.5),exp:45}; this.jesterTimer=random(1000,2000); break;
+        case'boss': break; // Corrigido: Não definir stats de boss aqui
         default: baseStats = {w:30,h:30,hp:15,dmg:10,spd:random(1,2),exp:25}; break; // Imp
     }
-    this.width = baseStats.w; this.height = baseStats.h;
-    this.hp = Math.floor(baseStats.hp * baseDifficulty * diffMod.hp * postBossMultiplier);
-    this.damage = Math.floor(baseStats.dmg * baseDifficulty * diffMod.dmg * postBossMultiplier);
-    this.speed = baseStats.spd * diffMod.spd * postBossSpeedMultiplier;
-    this.expValue = Math.floor(baseStats.exp * baseDifficulty);
+    if (this.type !== 'boss') {
+        this.width = baseStats.w; this.height = baseStats.h;
+        this.hp = Math.floor(baseStats.hp * baseDifficulty * diffMod.hp * postBossMultiplier);
+        this.damage = Math.floor(baseStats.dmg * baseDifficulty * diffMod.dmg * postBossMultiplier);
+        this.speed = baseStats.spd * diffMod.spd * postBossSpeedMultiplier;
+        this.expValue = Math.floor(baseStats.exp * baseDifficulty);
+        this.maxHp=this.hp;
+    }
 
-    this.maxHp=this.hp;this.shootCooldown=random(1500,3e3);this.descendY=canvas.height*0.6-random(0,150);this.isDescending=true;
+    this.shootCooldown=random(1500,3e3);this.descendY=canvas.height*0.6-random(0,150);this.isDescending=true;
     this.isBleeding=false; this.bleedDamagePerTick=0; this.bleedTicksLeft=0; this.bleedTickInterval=1000; this.bleedTickTimer=0;
     this.originalSpeed=this.speed}
 draw(theme){drawEnemy(this,theme);if(this.isFrozen){ctx.fillStyle='rgba(173,216,230,0.5)';ctx.fillRect(this.x,this.y,this.width,this.height);}}
@@ -324,7 +330,7 @@ function drawMenu(){ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performan
     else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);}
     else if(menuState==='binds'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Key Binds",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F - Active Ability 1","G - Active Ability 2","J - Active Ability 3","ESC - Pause Game", "", "LPLP - God Mode", "LPLPLP - Summon Boss"];binds.forEach((b,i)=>{ctx.fillText(b,canvas.width/2,220+i*40);});bindsButtons.forEach(btn=>drawButton(btn));}}
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
-function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
+function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
 function drawPlayingUI(){if(!player)return;const hpBar={x:20,y:20,w:300,h:25};ctx.fillStyle='#00000080';ctx.fillRect(hpBar.x,hpBar.y,hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.hp;ctx.fillRect(hpBar.x,hpBar.y,player.hp/player.stats.maxHp*hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.text;ctx.textAlign='center';ctx.font=`14px ${FONT_PRIMARY}`;ctx.shadowColor='black';ctx.shadowBlur=5;ctx.fillText(`${Math.ceil(player.hp||0)}/${player.stats.maxHp}`,hpBar.x+hpBar.w/2,hpBar.y+18);const xpBar={x:20,y:50,w:200,h:15};ctx.fillStyle='#00000080';ctx.fillRect(xpBar.x,xpBar.y,xpBar.w,xpBar.h);ctx.fillStyle=currentTheme.xp;ctx.fillRect(xpBar.x,xpBar.y,player.exp/player.expToNextLevel*xpBar.w,xpBar.h);ctx.fillText(`LVL ${player.level}`,xpBar.x+xpBar.w/2,xpBar.y+12);ctx.textAlign='right';const min=Math.floor(gameTime/6e4);const sec=Math.floor(gameTime%6e4/1e3).toString().padStart(2,'0');ctx.fillText(`${min}:${sec}`,canvas.width-30,40);const nBT=18e4-gameTime%18e4;const bM=Math.floor(nBT/6e4);const bS=Math.floor(nBT%6e4/1e3).toString().padStart(2,'0');if(!bossIsActive)ctx.fillText(`Boss:${bM}:${bS}`,canvas.width/2,40);ctx.shadowBlur=0;ctx.textAlign='left';drawActiveAbilityUI();}
 function drawActiveAbilityUI(){if(!player)return;let yOffset=0;['f','g','j'].forEach(key=>{const ability=player.activeAbilities[key];if(!ability)return;const s=50,p=10;const x=canvas.width-s-p,y=canvas.height-s-p-yOffset;const powerState=player.stats.activePowers[ability.stateName];ctx.fillStyle='#21212180';ctx.fillRect(x,y,s,s);ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.strokeRect(x,y,s,s);drawCardIcon(ability.n,x+s*0.1,y+s*0.1,s*0.8);ctx.fillStyle='#FFF';ctx.font=`bold ${s*0.3}px ${FONT_PRIMARY}`;ctx.textAlign='left';ctx.fillText(key.toUpperCase(),x+p/2,y+s-p/2);if(powerState.active){const ratio=powerState.timer/ability.duration;const barHeight=5;ctx.fillStyle='#76FF03';ctx.fillRect(x,y+s-barHeight,s*ratio,barHeight);}else if(powerState.cooldownTimer>0){ctx.fillStyle='#000000A0';ctx.fillRect(x,y,s,s);const secondsLeft=Math.ceil(powerState.cooldownTimer/1000);ctx.font=`bold ${s*0.6}px ${FONT_PRIMARY}`;ctx.textAlign='center';ctx.fillStyle='#FFF';ctx.fillText(secondsLeft,x+s/2,y+s/2+(s*0.2));}yOffset+=s+p;});}
 function drawPactScreen(){drawPlaying();ctx.fillStyle='#000000D0';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillStyle='#D32F2F';ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillText("A PACT IS OFFERED",canvas.width/2,150);ctx.shadowBlur=0;const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);const isH=mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH;const grad=ctx.createLinearGradient(x,y,x,y+cardH);grad.addColorStop(0,'#420b0b');grad.addColorStop(1,'#1A0000');ctx.fillStyle=grad;ctx.fillRect(x,y,cardW,cardH);ctx.strokeStyle=isH?'#FF1744':'#E53935';ctx.lineWidth=4;ctx.strokeRect(x,y,cardW,cardH);ctx.fillStyle='#FF8A80';ctx.font=`bold 18px ${FONT_PRIMARY}`;ctx.fillText(card.n,x+cardW/2,y+50);drawCardIcon(card.n,x+cardW/2-40,y+80,80);ctx.fillStyle='#FFCDD2';ctx.font=`14px ${FONT_PRIMARY}`;const dWords=card.d.split(' ');let line='',tY=y+200;for(let n=0;n<dWords.length;n++){let tL=line+dWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=dWords[n]+' ';tY+=25;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);if(card.l){ctx.fillStyle='#E57373';ctx.font=`italic 11px ${FONT_PRIMARY}`;tY+=40;const lWords=card.l.split(' ');line='';for(let n=0;n<lWords.length;n++){let tL=line+lWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=lWords[n]+' ';tY+=18;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);}})}
@@ -423,7 +429,7 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         }
         gameState='playing'
     }})}
-    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH){playClickSound();card.a(player);gameState='playing';}});
+    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cH){playClickSound();card.a(player);gameState='playing';}});
     }
 });
 
@@ -440,8 +446,7 @@ class VoidSpike extends Particle { constructor(x, y, w) { super(x, y, 0, 0, 0, '
 
 class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super('boss', x, y); // Chamada para herança de métodos, mas vamos sobrescrever tudo.
-        
+        super('boss', x, y);
         const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
         this.name = bossData.name;
         this.spriteFunction = bossData.spriteFunction;
@@ -458,7 +463,6 @@ class Boss extends Enemy {
         this.qteTimer = random(10000, 15000);
         this.specialAttackTimer = random(8000, 12000);
         this.isTelegraphing = false; this.telegraphDuration = 1000;
-        this.type = 'boss'; // Garante que o tipo seja 'boss' para lógica de não congelamento, etc.
     }
     update() {
         if (this.isFrozen) return;
