@@ -302,9 +302,9 @@ function setupMenus(){ menuButtons=[ {x:canvas.width/2-100,y:480,w:200,h:50,text
 function drawMenu(){ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);ctx.textAlign='center';
     if(menuState==='main'){ctx.save();ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillStyle=currentTheme.highlight;ctx.font=`54px ${FONT_PRIMARY}`;ctx.fillText("Seraph's Lag Stand",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`12px ${FONT_PRIMARY}`;ctx.fillText("(sim, eu pensei nesse nome)",canvas.width/2,180);ctx.restore();drawPlayerSprite({x:canvas.width/2-16,y:350,width:32,height:48,invincibilityTimer:0},currentTheme);menuButtons.forEach(btn=>drawButton(btn));drawLeaderboard(850,250,400,400);}
     else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);}
-    else if(menuState==='binds'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Key Binds",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F - Active Ability 1","G - Active Ability 2","J - Active Ability 3","ESC - Pause Game", "", "LPLP - ???"];binds.forEach((b,i)=>{ctx.fillText(b,canvas.width/2,250+i*40);});bindsButtons.forEach(btn=>drawButton(btn));}}
+    else if(menuState==='binds'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Key Binds",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F - Active Ability 1","G - Active Ability 2","J - Active Ability 3","ESC - Pause Game", "", "LPLP - God Mode", "LPLPLP - Summon Boss"];binds.forEach((b,i)=>{ctx.fillText(b,canvas.width/2,220+i*40);});bindsButtons.forEach(btn=>drawButton(btn));}}
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
-function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
+function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
 function drawPlayingUI(){if(!player)return;const hpBar={x:20,y:20,w:300,h:25};ctx.fillStyle='#00000080';ctx.fillRect(hpBar.x,hpBar.y,hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.hp;ctx.fillRect(hpBar.x,hpBar.y,player.hp/player.stats.maxHp*hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.text;ctx.textAlign='center';ctx.font=`14px ${FONT_PRIMARY}`;ctx.shadowColor='black';ctx.shadowBlur=5;ctx.fillText(`${Math.ceil(player.hp||0)}/${player.stats.maxHp}`,hpBar.x+hpBar.w/2,hpBar.y+18);const xpBar={x:20,y:50,w:200,h:15};ctx.fillStyle='#00000080';ctx.fillRect(xpBar.x,xpBar.y,xpBar.w,xpBar.h);ctx.fillStyle=currentTheme.xp;ctx.fillRect(xpBar.x,xpBar.y,player.exp/player.expToNextLevel*xpBar.w,xpBar.h);ctx.fillText(`LVL ${player.level}`,xpBar.x+xpBar.w/2,xpBar.y+12);ctx.textAlign='right';const min=Math.floor(gameTime/6e4);const sec=Math.floor(gameTime%6e4/1e3).toString().padStart(2,'0');ctx.fillText(`${min}:${sec}`,canvas.width-30,40);const nBT=18e4-gameTime%18e4;const bM=Math.floor(nBT/6e4);const bS=Math.floor(nBT%6e4/1e3).toString().padStart(2,'0');if(!bossIsActive)ctx.fillText(`Boss:${bM}:${bS}`,canvas.width/2,40);ctx.shadowBlur=0;ctx.textAlign='left';drawActiveAbilityUI();}
 function drawActiveAbilityUI(){if(!player)return;let yOffset=0;['f','g','j'].forEach(key=>{const ability=player.activeAbilities[key];if(!ability)return;const s=50,p=10;const x=canvas.width-s-p,y=canvas.height-s-p-yOffset;const powerState=player.stats.activePowers[ability.stateName];ctx.fillStyle='#21212180';ctx.fillRect(x,y,s,s);ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.strokeRect(x,y,s,s);drawCardIcon(ability.n,x+s*0.1,y+s*0.1,s*0.8);ctx.fillStyle='#FFF';ctx.font=`bold ${s*0.3}px ${FONT_PRIMARY}`;ctx.textAlign='left';ctx.fillText(key.toUpperCase(),x+p/2,y+s-p/2);if(powerState.active){const ratio=powerState.timer/ability.duration;const barHeight=5;ctx.fillStyle='#76FF03';ctx.fillRect(x,y+s-barHeight,s*ratio,barHeight);}else if(powerState.cooldownTimer>0){ctx.fillStyle='#000000A0';ctx.fillRect(x,y,s,s);const secondsLeft=Math.ceil(powerState.cooldownTimer/1000);ctx.font=`bold ${s*0.6}px ${FONT_PRIMARY}`;ctx.textAlign='center';ctx.fillStyle='#FFF';ctx.fillText(secondsLeft,x+s/2,y+s/2+(s*0.2));}yOffset+=s+p;});}
 function drawPactScreen(){drawPlaying();ctx.fillStyle='#000000D0';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillStyle='#D32F2F';ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillText("A PACT IS OFFERED",canvas.width/2,150);ctx.shadowBlur=0;const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);const isH=mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH;const grad=ctx.createLinearGradient(x,y,x,y+cardH);grad.addColorStop(0,'#420b0b');grad.addColorStop(1,'#1A0000');ctx.fillStyle=grad;ctx.fillRect(x,y,cardW,cardH);ctx.strokeStyle=isH?'#FF1744':'#E53935';ctx.lineWidth=4;ctx.strokeRect(x,y,cardW,cardH);ctx.fillStyle='#FF8A80';ctx.font=`bold 18px ${FONT_PRIMARY}`;ctx.fillText(card.n,x+cardW/2,y+50);drawCardIcon(card.n,x+cardW/2-40,y+80,80);ctx.fillStyle='#FFCDD2';ctx.font=`14px ${FONT_PRIMARY}`;const dWords=card.d.split(' ');let line='',tY=y+200;for(let n=0;n<dWords.length;n++){let tL=line+dWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=dWords[n]+' ';tY+=25;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);if(card.l){ctx.fillStyle='#E57373';ctx.font=`italic 11px ${FONT_PRIMARY}`;tY+=40;const lWords=card.l.split(' ');line='';for(let n=0;n<lWords.length;n++){let tL=line+lWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=lWords[n]+' ';tY+=18;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);}})}
@@ -353,7 +353,6 @@ function updatePlaying(){
 function drawPlaying(){ctx.save();if(screenShake.active&&screenShake.duration>0){ctx.translate(random(-screenShake.magnitude,screenShake.magnitude),random(-screenShake.magnitude,screenShake.magnitude));}ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);
 enemies.forEach(e => { if (e instanceof Boss && e.isTelegraphing) { const alpha = 0.4 * Math.abs(Math.sin(Date.now() * 0.02)); ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`; ctx.fillRect(e.x, e.y, e.width, e.height); } });
 const boss=enemies.find(e=>e instanceof Boss);
-// CORREÇÃO: Adicionada verificação se boss e boss.meteorTimers existem
 if(boss && boss.meteorTimers){
     boss.meteorTimers.forEach(m=>{if(m&&!m.visible){const indicatorSize=20;ctx.save();ctx.translate(m.x,30);ctx.fillStyle='red';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-indicatorSize,indicatorSize);ctx.lineTo(indicatorSize,indicatorSize);ctx.closePath();ctx.fill();ctx.restore();}if(m)m.draw();});
 }
@@ -372,7 +371,12 @@ if(!gameData.settings.performanceMode){if(gameState==='playing'||gameState==='me
 switch(gameState){case'menu':drawMenu();break;case'playing':if(player){updatePlaying();drawPlaying();drawPlayingUI();}break;case'paused':drawPauseScreen();break;case'levelUp':drawLevelUpScreen();break;case'pact':drawPactScreen();break;case'gameOver':drawGameOverScreen();break;case'bossReward':drawLevelUpScreen(currentBossRewardChoices, "BOSS DERROTADO!");break;}}
 window.addEventListener('keydown',e=>{
     if(gameState==='intro')return;
-    if (player) { keySequence.push(e.key.toUpperCase()); if (keySequence.length > 4) { keySequence.shift(); } if (keySequence.join('') === 'LPLP') { toggleGodMode(); keySequence = []; } }
+    if (player) {
+        keySequence.push(e.key.toUpperCase());
+        if (keySequence.length > 6) { keySequence.shift(); }
+        if (keySequence.join('') === 'LPLP') { toggleGodMode(); keySequence = []; }
+        else if (keySequence.join('') === 'LPLPLP') { summonNextBoss(); keySequence = []; }
+    }
     if (qteState.active && qteState.success === null) { if (e.key.toUpperCase() === qteState.keyToPress) { qteState.success = true; qteState.active = false; floatingTexts.push(new FloatingText(player.x, player.y - 30, 'SUCESSO!', '#76FF03')); playPowerUpSound(); return; } }
     if(e.code==='Escape'&&(gameState==='playing'||gameState==='paused')){playClickSound();if(gameState==='playing'){gameState='paused';if(ytPlayer)ytPlayer.pauseVideo();}else{gameState='playing';if(ytPlayer)ytPlayer.playVideo();};return;}if(gameState!=='playing'||!player)return;
     switch(e.code){ case'KeyA':keys.a.p=true;break;case'KeyD':keys.d.p=true;break; case'KeyW':keys.w.p=true;break;case'KeyS':keys.s.p=true;break; case'KeyL':keys.l.p=true;break;case'KeyP':keys.p.p=true;break; case'Space':if(!keys.space.p){player.jump();keys.space.p=true}break; case'KeyF':if(!keys.f.p){player.activatePower('f');keys.f.p=true}break; case'KeyG':if(!keys.g.p){player.activatePower('g');keys.g.p=true}break; case'KeyJ':if(!keys.j.p){player.activatePower('j');keys.j.p=true}break; }
@@ -403,22 +407,14 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         }
         gameState='playing'
     }})}
-    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH){playClickSound();card.a(player);gameState='playing';}});
+    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cH){playClickSound();card.a(player);gameState='playing';}});
     }
 });
 
 // --- DEFINIÇÃO DOS TIPOS DE CHEFE ---
 const BOSS_TYPES = [
-    {
-        name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1,
-        attackPatterns: { normal: ['multiShot', 'meteor'], enraged: ['shotgunBlast', 'multiShot'] },
-        specialAbility: (boss) => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } particles.push(new Shockwave(canvas.height - 32)); }
-    },
-    {
-        name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5,
-        attackPatterns: { normal: ['multiShot', 'multiShot'], enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot'] },
-        specialAbility: (boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); }
-    }
+    { name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1, attackPatterns: { normal: ['multiShot', 'meteor'], enraged: ['shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } particles.push(new Shockwave(canvas.height - 32)); } },
+    { name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5, attackPatterns: { normal: ['multiShot', 'multiShot'], enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); } }
 ];
 
 // --- PARTÍCULAS DE HABILIDADES DE CHEFE ---
@@ -428,31 +424,29 @@ class VoidSpike extends Particle { constructor(x, y, w) { super(x, y, 0, 0, 0, '
 
 class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super('boss', x, y);
+        super('boss', x, y); // Chamada para herança de métodos, mas vamos sobrescrever tudo.
+        
         const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
         this.name = bossData.name;
         this.spriteFunction = bossData.spriteFunction;
-        this.width = bossData.width;
-        this.height = bossData.height;
+        this.width = bossData.width; this.height = bossData.height;
         this.hp = Math.floor(bossData.baseHp * postBossMultiplier);
         this.maxHp = this.hp;
         this.damage = Math.floor(bossData.baseDamage * postBossMultiplier);
         this.speed = bossData.baseSpeed * (1 + (bossesDefeatedCount * 0.05));
         this.attackPatterns = bossData.attackPatterns;
         this.specialAbility = bossData.specialAbility;
-        this.meteorTimers = [null, null, null]; // CORREÇÃO: Propriedade adicionada
-        this.currentAttackIndex=0;this.attackTimer=5000;
-        this.isEnraged=false;this.enrageHelperTimer=7000;
+        this.meteorTimers = [null, null, null]; // CORREÇÃO: Garante que a propriedade existe.
+        this.currentAttackIndex=0; this.attackTimer=5000;
+        this.isEnraged=false; this.enrageHelperTimer=7000;
         this.qteTimer = random(10000, 15000);
         this.specialAttackTimer = random(8000, 12000);
-        this.isTelegraphing = false;
-        this.telegraphDuration = 1000;
+        this.isTelegraphing = false; this.telegraphDuration = 1000;
     }
     update() {
         if (this.isFrozen) return;
         this.x += this.speed;
         if (this.x < 50 || this.x + this.width > canvas.width - 50) { this.speed *= -1; }
-        
         this.attackTimer -= 16.67; this.specialAttackTimer -= 16.67;
         if (this.hp / this.maxHp < 0.4 && !this.isEnraged) { this.isEnraged = true; this.attackTimer = 1500; this.currentAttackIndex = 0; }
         if (this.isEnraged) {
@@ -477,6 +471,21 @@ class Boss extends Enemy {
             this.attackTimer = this.isEnraged ? 2800 : 5000;
         }
     }
+}
+
+// --- NOVO: FUNÇÃO DE CHEAT PARA INVOCAR O CHEFE ---
+function summonNextBoss() {
+    if (!player || bossIsActive) return;
+    enemies = [];
+    playerProjectiles = [];
+    enemyProjectiles = [];
+    particles = [];
+    playBossSpawnSound();
+    const bossData = BOSS_TYPES[bossesDefeatedCount % BOSS_TYPES.length];
+    enemies.push(new Boss(canvas.width / 2 - 60, -120, bossData));
+    bossIsActive = true;
+    bossTimer = 180000;
+    floatingTexts.push(new FloatingText(player.x, player.y - 40, "SUMMONING BOSS!", "orange"));
 }
 
 loadGameData();
