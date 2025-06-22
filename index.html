@@ -186,60 +186,11 @@ function drawWatcher(e,theme){ctx.save();const eyeColor='#E0F7FA';const wingColo
 function drawBrute(e,theme){const stoneColor='#795548';ctx.fillStyle=stoneColor;ctx.fillRect(e.x,e.y,e.width,e.height);ctx.fillStyle='#5D4037';ctx.fillRect(e.x+e.width*0.1,e.y+e.height*0.1,e.width*0.8,e.height*0.8);ctx.fillStyle='#D7CCC8';ctx.fillRect(e.x+e.width*0.3,e.y+e.height*0.3,e.width*0.4,e.height*0.4);}
 function drawSpecter(e,theme){ctx.globalAlpha=0.7;ctx.fillStyle='#E1BEE7';ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height/2,e.width/2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#CE93D8';ctx.fillRect(e.x,e.y+e.height/2,e.width,e.height);ctx.globalAlpha=1;}
 function drawJester(e,theme){const bodyColor='#FFEB3B';const hatColor='#D32F2F';ctx.fillStyle=bodyColor;ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height*0.7,e.width/2,0,Math.PI*2);ctx.fill();ctx.fillStyle=hatColor;ctx.beginPath();ctx.moveTo(e.x,e.y+e.height*0.3);ctx.lineTo(e.x+e.width,e.y+e.height*0.3);ctx.lineTo(e.x+e.width/2,e.y);ctx.closePath();ctx.fill();}
-// --- NOVO: FUNÇÕES DE DESENHO PARA CADA CHEFE ---
-function drawWardenBoss(e, theme) {
-    const bodyColor = e.isEnraged ? '#A1887F' : '#795548';
-    const crackColor = e.isEnraged ? '#FF7043' : '#5D4037';
-    const coreColor = e.isEnraged ? '#FFEA00' : '#FBC02D';
-    ctx.fillStyle = bodyColor;
-    ctx.fillRect(e.x, e.y, e.width, e.height);
-    ctx.strokeStyle = crackColor;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(e.x + 20, e.y); ctx.lineTo(e.x + 25, e.y + e.height);
-    ctx.moveTo(e.x + e.width - 10, e.y); ctx.lineTo(e.x + e.width - 15, e.y + e.height);
-    ctx.moveTo(e.x, e.y + 30); ctx.lineTo(e.x + e.width, e.y + 40);
-    ctx.stroke();
-    ctx.shadowColor = coreColor;
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = coreColor;
-    ctx.fillRect(e.x + e.width/2 - 15, e.y + e.height/2 - 15, 30, 30);
-    ctx.shadowBlur = 0;
-}
-function drawGazerBoss(e, theme) {
-    const eyeBallColor = e.isEnraged ? '#FFF' : '#E0F7FA';
-    const irisColor = e.isEnraged ? '#D50000' : '#0097A7';
-    const wingColor = e.isEnraged ? 'rgba(255, 82, 82, 0.6)' : 'rgba(77, 208, 225, 0.5)';
-    ctx.save();
-    // Asas
-    ctx.fillStyle = wingColor;
-    const wingY = e.y + e.height / 2;
-    ctx.beginPath();
-    ctx.moveTo(e.x, wingY); ctx.quadraticCurveTo(e.x - 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill();
-    ctx.moveTo(e.x + e.width, wingY); ctx.quadraticCurveTo(e.x + e.width + 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill();
-    // Olho
-    ctx.shadowColor = eyeBallColor; ctx.shadowBlur = 15;
-    ctx.fillStyle = eyeBallColor;
-    ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 2, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-    // Iris
-    ctx.fillStyle = irisColor;
-    ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 3, 0, Math.PI * 2); ctx.fill();
-    // Pupila
-    ctx.fillStyle = '#000';
-    ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 6, 0, Math.PI * 2); ctx.fill();
-    ctx.restore();
-}
+function drawWardenBoss(e, theme) { const bodyColor = e.isEnraged ? '#A1887F' : '#795548'; const crackColor = e.isEnraged ? '#FF7043' : '#5D4037'; const coreColor = e.isEnraged ? '#FFEA00' : '#FBC02D'; ctx.fillStyle = bodyColor; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.strokeStyle = crackColor; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(e.x + 20, e.y); ctx.lineTo(e.x + 25, e.y + e.height); ctx.moveTo(e.x + e.width - 10, e.y); ctx.lineTo(e.x + e.width - 15, e.y + e.height); ctx.moveTo(e.x, e.y + 30); ctx.lineTo(e.x + e.width, e.y + 40); ctx.stroke(); ctx.shadowColor = coreColor; ctx.shadowBlur = 20; ctx.fillStyle = coreColor; ctx.fillRect(e.x + e.width/2 - 15, e.y + e.height/2 - 15, 30, 30); ctx.shadowBlur = 0; }
+function drawGazerBoss(e, theme) { const eyeBallColor = e.isEnraged ? '#FFF' : '#E0F7FA'; const irisColor = e.isEnraged ? '#D50000' : '#0097A7'; const wingColor = e.isEnraged ? 'rgba(255, 82, 82, 0.6)' : 'rgba(77, 208, 225, 0.5)'; ctx.save(); ctx.fillStyle = wingColor; const wingY = e.y + e.height / 2; ctx.beginPath(); ctx.moveTo(e.x, wingY); ctx.quadraticCurveTo(e.x - 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill(); ctx.moveTo(e.x + e.width, wingY); ctx.quadraticCurveTo(e.x + e.width + 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill(); ctx.shadowColor = eyeBallColor; ctx.shadowBlur = 15; ctx.fillStyle = eyeBallColor; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = irisColor; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 3, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 6, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
 function drawEnemy(e,theme){
     if (e instanceof Boss) { e.spriteFunction(e, theme); return; }
-    switch(e.type){
-        case'imp':drawImp(e,theme);break;
-        case'watcher':drawWatcher(e,theme);break;
-        case'brute':drawBrute(e,theme);break;
-        case'specter':drawSpecter(e,theme);break;
-        case'jester':drawJester(e,theme);break;
-        default:drawImp(e,theme);
-    }
+    switch(e.type){ case'imp':drawImp(e,theme);break; case'watcher':drawWatcher(e,theme);break; case'brute':drawBrute(e,theme);break; case'specter':drawSpecter(e,theme);break; case'jester':drawJester(e,theme);break; default:drawImp(e,theme); }
 }
 function drawSpaceship(s){ctx.save();ctx.globalAlpha=0.3;ctx.shadowColor='#E3F2FD';ctx.shadowBlur=10;ctx.fillStyle=s.color1;ctx.beginPath();ctx.moveTo(s.x-s.w/2,s.y);ctx.lineTo(s.x+s.w/2,s.y);ctx.lineTo(s.x,s.y-s.h);ctx.closePath();ctx.fill();ctx.fillStyle=s.color2;ctx.fillRect(s.x-s.w/4,s.y-s.h*0.7,s.w/2,s.h*0.6);const flameLength=s.h*0.5*random(0.8,1.2);ctx.fillStyle='#FFB74D';ctx.beginPath();ctx.moveTo(s.x-s.w/4,s.y);ctx.lineTo(s.x+s.w/4,s.y);ctx.lineTo(s.x,s.y+flameLength);ctx.closePath();ctx.fill();ctx.restore();}
 function drawCardIcon(cN,x,y,s){ctx.save();ctx.translate(x,y);ctx.fillStyle='white';ctx.strokeStyle='white';ctx.lineWidth=s/16;switch(cN){case'Catalyst':ctx.beginPath();ctx.moveTo(0,s);ctx.lineTo(s*0.5,0);ctx.lineTo(s,s);ctx.lineTo(s*0.75,s*0.5);ctx.lineTo(s*0.25,s*0.5);ctx.closePath();ctx.fill();break;case'Eyesight':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.4,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.2,0,Math.PI*2);ctx.fill();break;case'Growth':case'Renew':case'Last Stand':ctx.beginPath();ctx.moveTo(s*0.5,s*0.1);ctx.lineTo(s*0.1,s*0.4);ctx.lineTo(s*0.35,s*0.6);ctx.lineTo(s*0.35,s*0.9);ctx.lineTo(s*0.65,s*0.9);ctx.lineTo(s*0.65,s*0.6);ctx.lineTo(s*0.9,s*0.4);ctx.closePath();ctx.fill();ctx.fillRect(s*0.4,s*0.3,s*0.2,s*0.4);ctx.fillRect(s*0.3,s*0.4,s*0.4,s*0.2);break;case'Resonance':ctx.beginPath();for(let i=0;i<3;i++){ctx.arc(s*0.5,s*0.5,s*0.15+i*(s*0.1),-Math.PI*0.7,-Math.PI*0.3);ctx.stroke();}break;case'Swift':ctx.beginPath();ctx.moveTo(s*0.1,s*0.2);ctx.lineTo(s*0.5,s*0.2);ctx.lineTo(s*0.4,s*0.5);ctx.moveTo(s*0.4,s*0.5);ctx.lineTo(s*0.8,s*0.5);ctx.lineTo(s*0.7,s*0.8);ctx.stroke();break;case'Leech':case'Abyssal Hunger':ctx.beginPath();ctx.arc(s*0.5,s*0.8,s*0.2,0,Math.PI*2);ctx.fill();ctx.fillRect(s*0.4,0,s*0.2,s*0.6);ctx.beginPath();ctx.moveTo(s*0.5,s*0.6);ctx.lineTo(s*0.3,s*0.4);ctx.moveTo(s*0.5,s*0.6);ctx.lineTo(s*0.7,s*0.4);ctx.stroke();break;case'Precision':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.4,0,Math.PI*2);ctx.moveTo(s*0.5,0);ctx.lineTo(s*0.5,s);ctx.moveTo(0,s*0.5);ctx.lineTo(s,s*0.5);ctx.stroke();ctx.fillRect(s*0.4,s*0.4,s*0.2,s*0.2);break;case'Charge':ctx.beginPath();ctx.arc(s*0.3,s*0.3,s*0.1,0,Math.PI*2);ctx.moveTo(s*0.7,s*0.7);ctx.arc(s*0.7,s*0.7,s*0.2,0,Math.PI*2);ctx.stroke();ctx.moveTo(s*0.3,s*0.3);ctx.lineTo(s*0.7,s*0.7);ctx.stroke();break;case'Wound':ctx.beginPath();ctx.moveTo(s*0.1,s*0.9);ctx.quadraticCurveTo(s*0.5,s*0.1,s*0.9,s*0.9);ctx.stroke();ctx.fillStyle='red';ctx.beginPath();ctx.arc(s*0.5,s*0.6,s*0.1,0,Math.PI*2);ctx.fill();break;case'Thunderbolt':ctx.beginPath();ctx.moveTo(s*0.5,0);ctx.lineTo(s*0.3,s*0.4);ctx.lineTo(s*0.7,s*0.4);ctx.lineTo(s*0.5,s);ctx.lineTo(s*0.5,s*0.7);ctx.stroke();break;case'Will-O-Wisp':ctx.beginPath();ctx.arc(s*0.5,s*0.4,s*0.3,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(s*0.3,s*0.8);ctx.lineTo(s*0.5,s*0.6);ctx.lineTo(s*0.7,s*0.8);ctx.stroke();break;case'Nova Pulse':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.1,0,Math.PI*2);ctx.fill();for(let i=0;i<8;i++){ctx.moveTo(s*0.5,s*0.5);ctx.lineTo(s*0.5+Math.cos(i*Math.PI/4)*s*0.4,s*0.5+Math.sin(i*Math.PI/4)*s*0.4);ctx.stroke();}break;case'Chain Lightning':ctx.beginPath();ctx.moveTo(s*0.1,s*0.2);ctx.lineTo(s*0.5,s*0.5);ctx.lineTo(s*0.1,s*0.8);ctx.moveTo(s*0.5,s*0.5);ctx.lineTo(s*0.9,s*0.2);ctx.stroke();break;case'Aegis Shield':ctx.beginPath();ctx.moveTo(s*0.5,0);ctx.lineTo(s*0.1,s*0.2);ctx.lineTo(s*0.1,s*0.6);ctx.quadraticCurveTo(s*0.5,s,s*0.9,s*0.6);ctx.lineTo(s*0.9,s*0.2);ctx.closePath();ctx.stroke();break;case'Appraisal':case'Gambler\'s Greed':ctx.fillRect(s*0.1,s*0.1,s*0.5,s*0.8);ctx.strokeRect(s*0.1,s*0.1,s*0.5,s*0.8);ctx.fillRect(s*0.4,0,s*0.5,s*0.8);ctx.strokeRect(s*0.4,0,s*0.5,s*0.8);break;case'Overheat':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.4,Math.PI*1.2,Math.PI*1.8);ctx.arc(s*0.5,s*0.5,s*0.4,Math.PI*0.2,Math.PI*0.8);ctx.stroke();ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.2,0,Math.PI*2);ctx.fill();break;case'Gush':ctx.beginPath();ctx.moveTo(s*0.2,s*0.8);ctx.quadraticCurveTo(s*0.5,s*0.4,s*0.8,s*0.8);ctx.moveTo(s*0.2,s*0.5);ctx.quadraticCurveTo(s*0.5,s*0.1,s*0.8,s*0.5);ctx.stroke();break;case'Immortal':case'Borrowed Time':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.4,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(s*0.2,s*0.2);ctx.lineTo(s*0.8,s*0.8);ctx.moveTo(s*0.8,s*0.2);ctx.lineTo(s*0.2,s*0.8);ctx.stroke();break;case'Glass Cannon':case'Devil\'s Bargain':ctx.fillRect(s*0.2,0,s*0.6,s);ctx.clearRect(s*0.3,s*0.1,s*0.4,s*0.8);break;case'Blood Pact':ctx.beginPath();ctx.arc(s*0.5,s*0.3,s*0.2,0,Math.PI*2);ctx.arc(s*0.3,s*0.7,s*0.2,0,Math.PI*2);ctx.arc(s*0.7,s*0.7,s*0.2,0,Math.PI*2);ctx.fillStyle='red';ctx.fill();break;case'Aegis Barrier':ctx.beginPath();ctx.moveTo(s*0.5,0);ctx.lineTo(s*0.1,s*0.2);ctx.lineTo(s*0.1,s*0.6);ctx.quadraticCurveTo(s*0.5,s,s*0.9,s*0.6);ctx.lineTo(s*0.9,s*0.2);ctx.closePath();ctx.stroke();ctx.fillRect(s*0.4,s*0.4,s*0.2,s*0.2);break;case'Chrono-Shift':ctx.beginPath();ctx.arc(s*0.5,s*0.5,s*0.4,0,Math.PI*2);ctx.stroke();ctx.fillRect(s*0.45,s*0.1,s*0.1,s*0.5);ctx.beginPath();ctx.moveTo(s*0.5,s*0.5);ctx.lineTo(s*0.8,s*0.5);ctx.stroke();break;case'Berserker\'s Rage':case'Chaotic Frenzy':ctx.beginPath();ctx.moveTo(s*0.1,s*0.1);ctx.lineTo(s*0.9,s*0.9);ctx.moveTo(s*0.1,s*0.9);ctx.lineTo(s*0.9,s*0.1);ctx.stroke();ctx.fillRect(s*0.4,s*0.4,s*0.2,s*0.2);break;
@@ -250,10 +201,10 @@ ctx.restore()}
 const MAX_LEVEL=5;
 const RARITY_MAP = {c: "Comum", u: "Incomum", r: "Raro", l: "Lendário", cursed: "Amaldiçoado", pact: "Pacto", mythic: "Mítico"};
 const UPGRADES=[
-    {n:"Catalyst",d:"Dano +2.",r:'c',type:'passive',levelable:true,a:p=>p.stats.projectileDamage+=2,scaling:p=>p.stats.projectileDamage+=2},{n:"Eyesight",d:"Chance de Crítico +5%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.critChance+=0.05,scaling:p=>p.stats.critChance+=0.05},{n:"Growth",d:"HP Máx. +10.",r:'c',type:'passive',levelable:true,a:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10},scaling:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10}},{n:"Resonance",d:"Vel. de Ataque +12%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.attackSpeed*=0.88,scaling:p=>p.stats.attackSpeed*=0.92},{n:"Swift",d:"Vel. de Movimento +15%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.speed*=1.15,scaling:p=>p.stats.speed*=1.15},{n:"Renew",d:"Cura para HP Máx.",r:'c',type:'passive',levelable:false,a:p=>{if(p.stats.canHeal)p.hp=p.stats.maxHp}},{n:"Quickdraw", d:"Velocidade dos projéteis +33%.", r:'c', type:'passive', levelable:false, a:p=>{p.upgrades['Quickdraw']={level:1}}},
+    {n:"Catalyst",d:"Dano +2.",r:'c',type:'passive',levelable:true,a:p=>p.stats.projectileDamage+=2,scaling:p=>p.stats.projectileDamage+=2},{n:"Eyesight",d:"Chance de Crítico +5%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.critChance+=0.05,scaling:p=>p.stats.critChance+=0.05},{n:"Growth",d:"HP Máx. +10.",r:'c',type:'passive',levelable:true,a:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10},scaling:p=>{p.stats.maxHp+=10;if(p.stats.canHeal)p.hp+=10}},{n:"Resonance",d:"Vel. de Ataque +12%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.attackSpeed*=0.88,scaling:p=>p.stats.attackSpeed*=0.92},{n:"Swift",d:"Vel. de Movimento +15%.",r:'c',type:'passive',levelable:true,a:p=>p.stats.speed*=1.15,scaling:p=>p.stats.speed*=1.15},{n:"Renew",d:"Cura para HP Máx.",r:'c',type:'passive',levelable:false,a:p=>{if(p.stats.canHeal)p.hp=p.stats.maxHp}},{n:"Quickdraw", d:"Velocidade dos projéteis +33%.", r:'c', type:'passive',levelable:false, a:p=>{p.upgrades['Quickdraw']={level:1}}},
     {n:"Leech",d:"Roubo de Vida 3%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.lifesteal+=0.03,scaling:p=>p.stats.lifesteal+=0.03},{n:"Precision",d:"Dano Crítico +50%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.critDamageMultiplier+=0.5,scaling:p=>p.stats.critDamageMultiplier+=0.5},{n:"Charge",d:"Tamanho do Projétil +20%.",r:'u',type:'passive',levelable:true,a:p=>p.stats.projectileSize*=1.2,scaling:p=>p.stats.projectileSize*=1.1},{n:"Gush",d:"+1 Pulo (Máx. 2).",r:'u',type:'passive',levelable:false,a:p=>p.stats.maxJumps=Math.min(2,p.stats.maxJumps+1)},{n:"Adrenaline Rush",d:"Ganha vel. de movimento ao levar dano.",r:'u',type:'passive',levelable:false,a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){this.stats.speed*=1.5;setTimeout(()=>this.stats.speed/=1.5,1500)}}}},{n:"Piercing Shots",d:"Projéteis perfuram 1 inimigo extra.",r:'u',type:'passive',levelable:true,a:p=>p.stats.projectilePierces++,scaling:p=>p.stats.projectilePierces++},{n:"Steady Hand",d:"Reduz a imprecisão de 'Frenesi Caótico'.",r:'u',type:'passive',levelable:false,a:p=>{p.upgrades['Steady Hand']={level:1};if(p.stats.hasFrenzy){p.stats.hasFrenzy=false; p.stats.hasFrenzyPrecise=true;}}},
     {n:"Wound",d:"Projéteis aplicam sangramento.",r:'r',l:"Sangramento causa 2 de dano/s por 3s.",type:'passive',levelable:false,a:p=>p.stats.canBleed=true},{n:"Thunderbolt",d:"Conjura 2 raios a cada 5s.",r:'r',l:"Dano aumenta com nível (35 base). Executa inimigos fracos.",type:'passive',levelable:true,a:p=>p.stats.hasThunderbolt=true,scaling:p=>{}},{n:"Will-O-Wisp",d:"Invoca um Wisp familiar.",r:'r',l:"Dano do Wisp escala com nível.",type:'passive',levelable:true,a:p=>p.stats.hasWisp=true,scaling:p=>{}},{n:"Nova Pulse",d:"Emite um pulso de dano a cada 4s.",r:'r',l:"Dano aumenta com nível.",type:'passive',levelable:true,a:p=>p.stats.novaPulse.enabled=true,scaling:p=>p.stats.novaPulse.damage+=15},{n:"Chain Lightning",d:"Proj. têm 15% de chance de ricochetear.",r:'r',l:"Chance aumenta com nível.",type:'passive',levelable:true,a:p=>p.stats.chainChance+=0.15,scaling:p=>p.stats.chainChance+=0.15},{n:"Ricochet",d:"Projéteis quicam nas paredes.",r:'r',l:"Aumente o nível para mais quiques.",type:'passive',levelable:true,a:p=>p.stats.projectileBounces+=1,scaling:p=>p.stats.projectileBounces+=1},{n:"Explosive Rounds", d:"15% de chance dos projéteis explodirem em área.", r:'r', type:'passive', levelable:true, a:p=>{p.upgrades['Explosive Rounds']?p.upgrades['Explosive Rounds'].level++:p.upgrades['Explosive Rounds']={level:1}}, scaling:p=>{}},
-    {n:"Aegis Shield",d:"Um escudo bloqueia um golpe a cada 15s.",r:'l',l:"Cooldown diminui com nível.",type:'passive',levelable:true,a:p=>p.stats.aegis.enabled=true,scaling:p=>p.stats.aegis.cooldown=Math.max(5000,p.stats.aegis.cooldown-2000)},{n:"Appraisal",d:"+1 escolha de carta permanentemente.",r:'l',type:'passive',levelable:false,a:p=>p.stats.upgradeChoices++},{n:"Overheat",d:"Seu corpo causa dano de contato.",r:'l',type:'passive',levelable:true,a:p=>p.stats.contactDamage+=20,scaling:p=>p.stats.contactDamage+=20},{n:"Immortal",d:"+1 Reviver.",r:'l',type:'passive',levelable:false,a:p=>p.stats.revives++},{n:"Temporal Anomaly",d:"10% de chance de congelar inimigos por 1s.",r:'l',l:"Congelamento não afeta chefes.",type:'passive',levelable:false,a:p=>{const o=Enemy.prototype.takeDamage;Enemy.prototype.takeDamage=function(a,f,e){o.call(this,a,f,e);if(f&&!(this instanceof Boss)&&Math.random()<0.1){this.isFrozen=true;setTimeout(()=>this.isFrozen=false,1000)}}}},{n:"Vengeful Spirit", d:"Ao levar dano, libera 3 projéteis teleguiados.", r:'l', type:'passive', levelable:false, a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){for(let i=0;i<3;i++){const target=enemies[Math.floor(Math.random()*enemies.length)];if(target)playerProjectiles.push(new HomingProjectile(this.x,this.y,target,5,'#FF8A80',15));}}}}}, {n:"Kinetic Converter",d:"Ganha dano extra com base na sua vel. de movimento.",r:'l',type:'passive',levelable:false,a:p=>{p.upgrades['Kinetic Converter']={level:1}}},{n:"Aegis Barrier",d:"Fique imune por 5s.",r:'l',type:'active',stateName:'aegis',duration:5000,cooldown:40000,levelable:false},{n:"Chrono-Shift",d:"Desacelera todos os inimigos por 4s.",r:'l',type:'active',stateName:'chronoShift',duration:4000,cooldown:50000,levelable:false},{n:"Berserker's Rage",d:"Dano e vel. de ataque massivos por 8s.",r:'l',type:'active',stateName:'berserk',duration:8000,cooldown:60000,levelable:false},
+    {n:"Aegis Shield",d:"Um escudo bloqueia um golpe a cada 15s.",r:'l',l:"Cooldown diminui com nível.",type:'passive',levelable:true,a:p=>p.stats.aegis.enabled=true,scaling:p=>p.stats.aegis.cooldown=Math.max(5000,p.stats.aegis.cooldown-2000)},{n:"Appraisal",d:"+1 escolha de carta permanentemente.",r:'l',type:'passive',levelable:false,a:p=>p.stats.upgradeChoices++},{n:"Overheat",d:"Seu corpo causa dano de contato.",r:'l',type:'passive',levelable:true,a:p=>p.stats.contactDamage+=20,scaling:p=>p.stats.contactDamage+=20},{n:"Immortal",d:"+1 Reviver.",r:'l',type:'passive',levelable:false,a:p=>p.stats.revives++},{n:"Temporal Anomaly",d:"10% de chance de congelar inimigos por 1s.",r:'l',l:"Congelamento não afeta chefes.",type:'passive',levelable:false,a:p=>{const o=Enemy.prototype.takeDamage;Enemy.prototype.takeDamage=function(a,f,e){o.call(this,a,f,e);if(f&&!(this instanceof Boss)&&Math.random()<0.1){this.isFrozen=true;setTimeout(()=>this.isFrozen=false,1000)}}}},{n:"Vengeful Spirit", d:"Ao levar dano, libera 3 projéteis teleguiados.", r:'l', type:'passive', levelable:false, a:p=>{const o=p.takeDamage;p.takeDamage=async function(a,f){await o.call(this,a,f);if(this.hp>0){for(let i=0;i<3;i++){const target=enemies[Math.floor(Math.random()*enemies.length)];if(target)playerProjectiles.push(new HomingProjectile(this.x,this.y,target,5,'#FF8A80',15));}}}}}, {n:"Kinetic Converter",d:"Ganha dano extra com base na sua vel. de movimento.",r:'l',type:'passive',levelable:false,a:p=>{p.upgrades['Kinetic Converter']={level:1}}},{n:"Aegis Barrier",d:"Fique imune por 5s.",r:'l',type:'active',stateName:'aegis',duration:5000,cooldown:40000,levelable:false},{n:"Chrono-Shift",d:"Desacelera todos os inimigos por 4s.",r:'l',type:'active',stateName:'chronoShift',duration:4000,cooldown:50000,levelable:false},{n:"Berserker\'s Rage",d:"Dano e vel. de ataque massivos por 8s.",r:'l',type:'active',stateName:'berserk',duration:8000,cooldown:60000,levelable:false},
     {n:"Celestial Judgment",d:"Conjura um raio celestial a cada 10s.",r:'mythic',l:"O raio causa dano massivo em área.",type:'passive',levelable:true,a:p=>p.stats.celestialJudgement.enabled=true,scaling:p=>p.stats.celestialJudgement.damage+=100},{n:"Singularity",d:"Puxa todos os inimigos e causa dano.",r:'mythic',type:'active',stateName:'singularity',duration:500,cooldown:45000,levelable:false},{n:"Warp Drive",d:"Um dash rápido que causa dano e te deixa imune.",r:'mythic',type:'active',stateName:'warpDrive',duration:200,cooldown:3000,levelable:false},{n:"Reaper's Scythe",d:"Inimigos explodem ao morrer, causando 25% de sua vida máx. como dano em área.",r:'mythic',type:'passive',levelable:false,a:p=>{p.upgrades["Reaper's Scythe"]={level:1}}},
     {n:"Glass Cannon",d:"+100% Dano, -50% HP Máx.",r:'cursed',type:'passive',levelable:false,a:p=>{p.stats.damageMultiplier*=2;p.stats.maxHp=Math.ceil(p.stats.maxHp*0.5);p.hp=Math.min(p.hp,p.stats.maxHp)}},{n:"Blood Pact",d:"-25% HP Máx. por +40% de Dano.",r:'cursed',type:'passive',levelable:false,a:p=>{p.stats.maxHp=Math.ceil(p.stats.maxHp*0.75);p.hp=Math.min(p.hp,p.stats.maxHp);p.stats.damageMultiplier+=0.4}},
 ];
@@ -276,8 +227,8 @@ update(){if(this.target&&this.target.hp>0){const targetAngle=Math.atan2(this.tar
 class Enemy{constructor(type,x,y){
     const baseDifficulty = cappedDifficultyValue;
     const diffMod=DIFFICULTY_MODS[gameDifficulty];
-    const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15); // +15% HP/Dmg por chefe
-    const postBossSpeedMultiplier = 1 + (bossesDefeatedCount * 0.05); // +5% Vel por chefe
+    const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
+    const postBossSpeedMultiplier = 1 + (bossesDefeatedCount * 0.05);
 
     this.type=type;this.x=x;this.y=y;this.velocity={x:0,y:0};this.isPulled=false;this.isFrozen=false;
     let baseStats = {};
@@ -308,13 +259,7 @@ if(player&&player.stats.contactDamage>0&&checkCollision(this,player)){this.takeD
 shoot(){let pSpeed=player&&player.stats.activePowers.chronoShift.active?2:6;const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2));let color=this.type==='brute'?'#795548':this.type==='jester'?'#FFEB3B':currentTheme.enemy;let size=this.type==='brute'?10:6;const proj=new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle)*pSpeed,Math.sin(angle)*pSpeed,size,color,this.damage,false);if(this.type==='jester'){proj.split=true;proj.splitTimer=1000;}
 enemyProjectiles.push(proj);}
 takeDamage(amount,fromProjectile, isExecutionPossible = false){
-    // Lógica de Execução
-    if (isExecutionPossible && this.hp <= amount) {
-        this.hp = 0;
-    } else {
-        this.hp-=amount;
-    }
-
+    if (isExecutionPossible && this.hp <= amount) { this.hp = 0; } else { this.hp-=amount; }
     if (fromProjectile) {
         playEnemyHitSound();
         if(player.stats.canHeal && player.stats.lifesteal > 0){player.hp = Math.min(player.stats.maxHp, player.hp + amount * player.stats.lifesteal)}
@@ -330,9 +275,9 @@ class FloatingText{constructor(x,y,t,c){this.x=x;this.y=y;this.text=t;this.color
 class BackgroundParticle{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.size=random(1,3);this.speedY=random(0.1,0.5);this.opacity=random(0.2,0.8);}update(){this.y-=this.speedY;if(this.y<0){this.y=canvas.height;this.x=Math.random()*canvas.width;}}draw(){ctx.fillStyle=`rgba(255, 255, 224, ${this.opacity})`;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}}
 class Spaceship{constructor(){this.w=random(20,40);this.h=this.w*1.5;this.speed=random(1,3);const edge=Math.floor(random(0,3));if(edge===0){this.x=-this.w;this.y=random(0,canvas.height*0.6);this.angle=random(-0.3,0.3);}else if(edge===1){this.x=canvas.width+this.w;this.y=random(0,canvas.height*0.6);this.angle=Math.PI+random(-0.3,0.3);}else{this.x=random(0,canvas.width);this.y=-this.h;this.angle=Math.PI/2+random(-0.3,0.3);}this.color1='#B0BEC5';this.color2='#78909C';}
 update(){this.x+=Math.cos(this.angle)*this.speed;this.y+=Math.sin(this.angle)*this.speed;if(this.x<-100||this.x>canvas.width+100||this.y>canvas.height+100){this.dead=true;}}draw(){drawSpaceship(this);}}
-class Meteor{constructor(){this.targetX=player.x;this.x=this.targetX;this.y=-50;this.radius=20;this.speed=8;this.dead=false;this.visible=false;this.followTimer=2000;}
-update(){if(this.followTimer>0){this.targetX=player.x;this.x=this.targetX;this.followTimer-=16.67;}else{this.visible=true;this.y+=this.speed;}if(this.visible&&player&&checkCollision({x:this.x-this.radius,y:this.y-this.radius,width:this.radius*2,height:this.radius*2},player)){player.takeDamage(40);this.dead=true;}if(this.y>canvas.height)this.dead=true;}
-draw(){if(this.visible){ctx.save();ctx.fillStyle='orange';ctx.shadowColor='red';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(this.x,this.y,this.radius,0,2*Math.PI);ctx.fill();ctx.restore();}}}
+class Meteor extends Particle {constructor(){super(player.x,-50,0,8,20,'orange',300);this.targetX=player.x;this.followTimer=2000;this.visible=false;}
+update(){ if(this.followTimer>0){this.targetX=player.x;this.x=this.targetX;this.followTimer-=16.67;}else{this.visible=true;this.y+=this.v.y;} if(this.visible&&player&&checkCollision({x:this.x-this.s,y:this.y-this.s,width:this.s*2,height:this.s*2},player)){player.takeDamage(40);this.l=0;} if(this.y>canvas.height)this.l=0; }
+draw(){if(this.visible){ctx.save();ctx.fillStyle=this.c;ctx.shadowColor='red';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,2*Math.PI);ctx.fill();ctx.restore();}}}
 function random(min,max){return Math.random()*(max-min)+min}
 function checkCollision(r1,r2){return r1.x<r2.x+r2.width&&r1.x+r1.width>r2.x&&r1.y<r2.y+r2.height&&r1.y+r1.height>r2.y}
 const DIFFICULTY_MODS={easy:{hp:0.7,dmg:0.8,spd:0.9,spawnRate:1.2},medium:{hp:1.0,dmg:1.0,spd:1.0,spawnRate:1.0},hard:{hp:1.5,dmg:1.2,spd:1.1,spawnRate:0.8},nightmare:{hp:3.0,dmg:2.0,spd:1.2,spawnRate:0.5}};
@@ -407,7 +352,11 @@ function updatePlaying(){
 }
 function drawPlaying(){ctx.save();if(screenShake.active&&screenShake.duration>0){ctx.translate(random(-screenShake.magnitude,screenShake.magnitude),random(-screenShake.magnitude,screenShake.magnitude));}ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);
 enemies.forEach(e => { if (e instanceof Boss && e.isTelegraphing) { const alpha = 0.4 * Math.abs(Math.sin(Date.now() * 0.02)); ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`; ctx.fillRect(e.x, e.y, e.width, e.height); } });
-const boss=enemies.find(e=>e instanceof Boss);if(boss){boss.meteorTimers.forEach(m=>{if(m&&!m.visible){const indicatorSize=20;ctx.save();ctx.translate(m.x,30);ctx.fillStyle='red';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-indicatorSize,indicatorSize);ctx.lineTo(indicatorSize,indicatorSize);ctx.closePath();ctx.fill();ctx.restore();}if(m)m.draw();});}
+const boss=enemies.find(e=>e instanceof Boss);
+// CORREÇÃO: Adicionada verificação se boss e boss.meteorTimers existem
+if(boss && boss.meteorTimers){
+    boss.meteorTimers.forEach(m=>{if(m&&!m.visible){const indicatorSize=20;ctx.save();ctx.translate(m.x,30);ctx.fillStyle='red';ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-indicatorSize,indicatorSize);ctx.lineTo(indicatorSize,indicatorSize);ctx.closePath();ctx.fill();ctx.restore();}if(m)m.draw();});
+}
 if(gameState!=='gameOver' && player){player.draw(currentTheme);if(player.stats.wisp)player.stats.wisp.draw();}enemies.forEach(e=>e.draw(currentTheme));playerProjectiles.forEach(p=>p.draw());enemyProjectiles.forEach(p=>p.draw());particles.forEach(p=>p.draw());floatingTexts.forEach(ft=>ft.draw());
 drawQTE();
 ctx.restore();
@@ -458,81 +407,28 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
     }
 });
 
-// --- NOVO: DEFINIÇÃO DOS TIPOS DE CHEFE ---
+// --- DEFINIÇÃO DOS TIPOS DE CHEFE ---
 const BOSS_TYPES = [
     {
-        name: "Guardião de Pedra",
-        spriteFunction: drawWardenBoss,
-        width: 120, height: 120,
-        baseHp: 2500, baseDamage: 40,
-        attackPatterns: {
-            normal: ['multiShot', 'meteor'],
-            enraged: ['shotgunBlast', 'multiShot']
-        },
-        specialAbility: (boss) => { // Ground Slam
-            playQuakeSound();
-            screenShake = { active: true, magnitude: 15, duration: 300 };
-            if (player && player.y + player.height >= canvas.height - 160 - 5) {
-                player.takeDamage(boss.damage * 1.5);
-            }
-            // Efeito visual da onda de choque
-            particles.push(new Shockwave(canvas.height - 32));
-        }
+        name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1,
+        attackPatterns: { normal: ['multiShot', 'meteor'], enraged: ['shotgunBlast', 'multiShot'] },
+        specialAbility: (boss) => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } particles.push(new Shockwave(canvas.height - 32)); }
     },
     {
-        name: "Observador do Vazio",
-        spriteFunction: drawGazerBoss,
-        width: 100, height: 100,
-        baseHp: 2000, baseDamage: 35,
-        attackPatterns: {
-            normal: ['multiShot', 'multiShot'],
-            enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot']
-        },
-        specialAbility: (boss) => { // Void Spikes
-            const spikeX = player.x + player.width / 2;
-            // Cria um indicador no chão
-            particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80));
-            setTimeout(() => {
-                // Cria o espinho real que causa dano
-                particles.push(new VoidSpike(spikeX, canvas.height - 32, 80));
-                if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) {
-                    player.takeDamage(boss.damage * 1.2);
-                }
-            }, 500);
-        }
+        name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5,
+        attackPatterns: { normal: ['multiShot', 'multiShot'], enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot'] },
+        specialAbility: (boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); }
     }
 ];
 
-// --- NOVO: CLASSE BOSS E PARTÍCULAS DE HABILIDADES ---
-class Shockwave extends Particle {
-    constructor(y) { super(0, y, 0, 0, 0, 'white', 30); this.endX = canvas.width; }
-    draw() { ctx.save(); ctx.globalAlpha = this.l / 30; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(this.x, this.y, this.endX, 4); ctx.restore(); }
-}
-class SpikeIndicator extends Particle {
-    constructor(x, y, w) { super(x - w/2, y - 10, 0, 0, 0, 'purple', 30); this.width = w; this.height = 10; }
-    draw() { ctx.save(); ctx.globalAlpha = (this.l / 30) * 0.7; ctx.fillStyle = '#E040FB'; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.restore(); }
-}
-class VoidSpike extends Particle {
-    constructor(x, y, w) { super(x, y, 0, 0, 0, 'purple', 20); this.width = w; this.baseY = y; }
-    draw() {
-        ctx.save();
-        const progress = (20 - this.l) / 10;
-        const currentHeight = Math.min(1, progress) * 80;
-        ctx.globalAlpha = this.l / 20;
-        ctx.fillStyle = '#AB47BC';
-        ctx.beginPath();
-        ctx.moveTo(this.x - this.width/2, this.baseY);
-        ctx.lineTo(this.x, this.baseY - currentHeight);
-        ctx.lineTo(this.x + this.width/2, this.baseY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-    }
-}
+// --- PARTÍCULAS DE HABILIDADES DE CHEFE ---
+class Shockwave extends Particle { constructor(y) { super(0, y, 0, 0, 0, 'white', 30); this.endX = canvas.width; } draw() { ctx.save(); ctx.globalAlpha = this.l / 30; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(this.x, this.y, this.endX, 4); ctx.restore(); } }
+class SpikeIndicator extends Particle { constructor(x, y, w) { super(x - w/2, y - 10, 0, 0, 0, 'purple', 30); this.width = w; this.height = 10; } draw() { ctx.save(); ctx.globalAlpha = (this.l / 30) * 0.7; ctx.fillStyle = '#E040FB'; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.restore(); } }
+class VoidSpike extends Particle { constructor(x, y, w) { super(x, y, 0, 0, 0, 'purple', 20); this.width = w; this.baseY = y; } draw() { ctx.save(); const progress = (20 - this.l) / 10; const currentHeight = Math.min(1, progress) * 80; ctx.globalAlpha = this.l / 20; ctx.fillStyle = '#AB47BC'; ctx.beginPath(); ctx.moveTo(this.x - this.width/2, this.baseY); ctx.lineTo(this.x, this.baseY - currentHeight); ctx.lineTo(this.x + this.width/2, this.baseY); ctx.closePath(); ctx.fill(); ctx.restore(); } }
 
 class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super('boss', x, y); // Chama o construtor Enemy, mas vamos sobrescrever os stats
+        super('boss', x, y);
         const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
         this.name = bossData.name;
         this.spriteFunction = bossData.spriteFunction;
@@ -541,9 +437,10 @@ class Boss extends Enemy {
         this.hp = Math.floor(bossData.baseHp * postBossMultiplier);
         this.maxHp = this.hp;
         this.damage = Math.floor(bossData.baseDamage * postBossMultiplier);
+        this.speed = bossData.baseSpeed * (1 + (bossesDefeatedCount * 0.05));
         this.attackPatterns = bossData.attackPatterns;
         this.specialAbility = bossData.specialAbility;
-
+        this.meteorTimers = [null, null, null]; // CORREÇÃO: Propriedade adicionada
         this.currentAttackIndex=0;this.attackTimer=5000;
         this.isEnraged=false;this.enrageHelperTimer=7000;
         this.qteTimer = random(10000, 15000);
@@ -551,61 +448,30 @@ class Boss extends Enemy {
         this.isTelegraphing = false;
         this.telegraphDuration = 1000;
     }
-
     update() {
         if (this.isFrozen) return;
-        // Movimento simples lado a lado
         this.x += this.speed;
-        if (this.x < 50 || this.x + this.width > canvas.width - 50) {
-            this.speed *= -1;
-        }
+        if (this.x < 50 || this.x + this.width > canvas.width - 50) { this.speed *= -1; }
         
-        // Lógica de ataque
-        this.attackTimer -= 16.67;
-        this.specialAttackTimer -= 16.67;
-
-        if (this.hp / this.maxHp < 0.4 && !this.isEnraged) {
-            this.isEnraged = true;
-            this.attackTimer = 1500;
-            this.currentAttackIndex = 0;
-        }
-
+        this.attackTimer -= 16.67; this.specialAttackTimer -= 16.67;
+        if (this.hp / this.maxHp < 0.4 && !this.isEnraged) { this.isEnraged = true; this.attackTimer = 1500; this.currentAttackIndex = 0; }
         if (this.isEnraged) {
             this.enrageHelperTimer -= 16.67;
-            if(this.enrageHelperTimer <= 0){
-                enemies.push(new Enemy('imp', this.x, -50));
-                enemies.push(new Enemy('specter', this.x + this.width, -50));
-                this.enrageHelperTimer = 8000;
-            }
+            if(this.enrageHelperTimer <= 0){ enemies.push(new Enemy('imp', this.x, -50)); enemies.push(new Enemy('specter', this.x + this.width, -50)); this.enrageHelperTimer = 8000; }
             this.qteTimer -= 16.67;
-            if (this.qteTimer <= 0 && !qteState.active) {
-                triggerQTE();
-                this.qteTimer = random(12000, 18000);
-            }
+            if (this.qteTimer <= 0 && !qteState.active) { triggerQTE(); this.qteTimer = random(12000, 18000); }
         }
-        
         if (this.specialAttackTimer <= 0 && !this.isTelegraphing) {
             this.isTelegraphing = true;
-            setTimeout(() => {
-                if(this.hp > 0) { // Garante que o chefe não ataque depois de morto
-                    this.specialAbility(this);
-                }
-                this.isTelegraphing = false;
-                this.specialAttackTimer = random(10000, 15000);
-            }, this.telegraphDuration);
+            setTimeout(() => { if(this.hp > 0) { this.specialAbility(this); } this.isTelegraphing = false; this.specialAttackTimer = random(10000, 15000); }, this.telegraphDuration);
         }
-
         if(this.attackTimer<=0 && !this.isTelegraphing){
             const currentPattern = this.isEnraged ? this.attackPatterns.enraged : this.attackPatterns.normal;
             const nextAttack = currentPattern[this.currentAttackIndex];
-            
             switch(nextAttack){
-                case 'multiShot':
-                    for(let i=-2;i<=2;i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.2)*6,Math.sin(angle+i*0.2)*6,10,'#FF5722',this.damage,false)) } break;
-                case 'shotgunBlast':
-                    for(let i = -4; i <= 4; i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.15)*7,Math.sin(angle+i*0.15)*7,8,'#FF1744',this.damage*0.8,false)) } break;
-                case 'meteor':
-                    for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0) particles.push(new Meteor())},i*300); break;
+                case 'multiShot': for(let i=-2;i<=2;i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.2)*6,Math.sin(angle+i*0.2)*6,10,'#FF5722',this.damage,false)) } break;
+                case 'shotgunBlast': for(let i = -4; i <= 4; i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.15)*7,Math.sin(angle+i*0.15)*7,8,'#FF1744',this.damage*0.8,false)) } break;
+                case 'meteor': for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0) particles.push(new Meteor())},i*300); break;
             }
             this.currentAttackIndex=(this.currentAttackIndex+1) % currentPattern.length;
             this.attackTimer = this.isEnraged ? 2800 : 5000;
