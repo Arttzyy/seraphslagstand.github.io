@@ -58,7 +58,6 @@
         .hidden { display: none !important; }
         #nickname-input { font-family: 'Press Start 2P', cursive; background-color: #333; border: 2px solid #999; color: white; padding: 10px; font-size: 16px; text-align: center; width: 300px; margin-top: 20px; }
         #nickname-button {width: auto;}
-
     </style>
 </head>
 <body>
@@ -222,16 +221,13 @@ function drawPlayerSprite(p,theme){
     if(p&&p.stats&&p.stats.activePowers){ if(p.stats.activePowers.chronoShift.active){ctx.shadowColor='#81D4FA';ctx.shadowBlur=20;} if(p.stats.activePowers.berserk.active){ctx.shadowColor='#F44336';ctx.shadowBlur=20;} }
     if(!gameData.settings.performanceMode){ ctx.fillStyle=`rgba(0,0,0,0.4)`; ctx.beginPath(); ctx.ellipse(x+p.width/2,y+p.height,p.width*.7,p.height*.15,0,0,Math.PI*2); ctx.fill(); }
     
-    // Corpo
     const bodyColor = p.invincibilityTimer > 0 ? '#FFFFFF' : gameData.customization.color;
     ctx.fillStyle = bodyColor;
     ctx.fillRect(x, y + 20, p.width, p.height - 20);
 
-    // Roupa (Outfit)
     const outfit = OUTFITS[gameData.customization.outfit];
     if (outfit && outfit.draw) outfit.draw(x, y, p.width, p.height);
 
-    // Chapéu (Hat)
     const hat = HATS[gameData.customization.hat];
     if(hat && hat.draw) hat.draw(x, y, p.width, p.height);
 
@@ -326,7 +322,7 @@ takeDamage(amount,fromProjectile, isExecutionPossible = false){
     if (fromProjectile) {
         playEnemyHitSound();
         if(player.stats.canHeal && player.stats.lifesteal > 0){player.hp = Math.min(player.stats.maxHp, player.hp + amount * player.stats.lifesteal)}
-        if(player.stats.canBleed && !this.isBleeding){this.isBleeding=true;this.bleedDamagePerTick=2;this.bleedTicksLeft=3;this.bleedTickInterval=1000;}
+        if(player.stats.canBleed && !this.isBleeding){this.isBleeding=true;this.bleedDamagePerTick=2;this.bleedTicksLeft=3;this.bleedTickTimer=this.bleedTickInterval;}
     }
     floatingTexts.push(new FloatingText(this.x, this.y, Math.round(amount), 'white'));
 }}
@@ -380,9 +376,9 @@ function setupMenus(){
         {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}}
     ];
     customizeButtons = [
-        {x: 400, y: 300, w: 150, h: 50, text: '< Hat >', action: (dir) => { gameData.customization.hat = (gameData.customization.hat + dir + HATS.length) % HATS.length; if(!gameData.customization.unlockedHats.includes(gameData.customization.hat)) customizeButtons[0].action(dir); }},
-        {x: 400, y: 360, w: 150, h: 50, text: '< Outfit >', action: (dir) => { gameData.customization.outfit = (gameData.customization.outfit + dir + OUTFITS.length) % OUTFITS.length; if(!gameData.customization.unlockedOutfits.includes(gameData.customization.outfit)) customizeButtons[1].action(dir); }},
-        {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { const colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); currentIndex = (currentIndex + dir + colors.length) % colors.length; gameData.customization.color = colors[currentIndex]; if(!gameData.customization.unlockedColors.includes(gameData.customization.color)) customizeButtons[2].action(dir);}},
+        {x: 400, y: 300, w: 150, h: 50, text: '< Hat >', action: (dir) => { let next = gameData.customization.hat; do { next = (next + dir + HATS.length) % HATS.length; } while (!gameData.customization.unlockedHats.includes(next)); gameData.customization.hat = next; }},
+        {x: 400, y: 360, w: 150, h: 50, text: '< Outfit >', action: (dir) => { let next = gameData.customization.outfit; do { next = (next + dir + OUTFITS.length) % OUTFITS.length; } while (!gameData.customization.unlockedOutfits.includes(next)); gameData.customization.outfit = next; }},
+        {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { let colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); do { currentIndex = (currentIndex + dir + colors.length) % colors.length; } while (!gameData.customization.unlockedColors.includes(colors[currentIndex])); gameData.customization.color = colors[currentIndex];}},
         {x: canvas.width/2 - 100, y: 600, w: 200, h: 50, text: 'Save & Back', action: () => { saveGameData(); menuState = 'main'; playClickSound(); }}
     ];
      wikiButtons = [ {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; playClickSound(); }} ];
@@ -620,6 +616,45 @@ function summonNextBoss() {
     bossTimer = 180000;
     floatingTexts.push(new FloatingText(player.x, player.y - 40, "SUMMONING BOSS!", "orange"));
 }
+
+// --- PATCH NOTES ---
+function showPatchNotes() {
+    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+    if (lastSeenVersion === GAME_VERSION) return;
+
+    const patchNotesContainer = document.getElementById('patch-notes-container');
+    const patchNotesContent = document.getElementById('patch-notes-content');
+    patchNotesContent.innerHTML = `
+        <h1>Patch Notes - V${GAME_VERSION}</h1>
+        <h2>Novas Funcionalidades</h2>
+        <ul>
+            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos!</li>
+            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado para personalizar seu personagem.</li>
+            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear chapéus, roupas e cores temáticas!</li>
+            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
+        </ul>
+        <h2>Melhorias e Mudanças</h2>
+        <ul>
+            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
+            <li>A dificuldade do jogo agora aumenta permanentemente após cada chefe derrotado.</li>
+            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de upgrade para evitar escolhas acidentais.</li>
+            <li>O aviso visual do ataque de chão do primeiro chefe agora acontece ANTES do dano.</li>
+        </ul>
+        <h2>Correções de Bugs</h2>
+        <ul>
+            <li>Corrigido um bug crítico que impedia o jogo de carregar.</li>
+            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
+            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
+        </ul>
+        <button class="close-button" id="close-patch-notes">Let's Go!</button>
+    `;
+    patchNotesContainer.classList.remove('hidden');
+    document.getElementById('close-patch-notes').addEventListener('click', () => {
+        patchNotesContainer.classList.add('hidden');
+        localStorage.setItem('lastSeenVersion', GAME_VERSION);
+    });
+}
+
 
 loadGameData();
 initializeNickname();
