@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,7 +73,7 @@ let playerNickname = null;
 let leaderboardData = [];
 let difficultyIsCapped = false;
 let cappedDifficultyValue = 1;
-let canClickCards = true; // NOVO: Controle de clique de carta
+let canClickCards = true;
 
 let player, terrain;
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
@@ -213,6 +214,9 @@ function drawSpecter(e,theme){ctx.globalAlpha=0.7;ctx.fillStyle='#E1BEE7';ctx.be
 function drawJester(e,theme){const bodyColor='#FFEB3B';const hatColor='#D32F2F';ctx.fillStyle=bodyColor;ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height*0.7,e.width/2,0,Math.PI*2);ctx.fill();ctx.fillStyle=hatColor;ctx.beginPath();ctx.moveTo(e.x,e.y+e.height*0.3);ctx.lineTo(e.x+e.width,e.y+e.height*0.3);ctx.lineTo(e.x+e.width/2,e.y);ctx.closePath();ctx.fill();}
 function drawWardenBoss(e, theme) { const bodyColor = e.isEnraged ? '#A1887F' : '#795548'; const crackColor = e.isEnraged ? '#FF7043' : '#5D4037'; const coreColor = e.isEnraged ? '#FFEA00' : '#FBC02D'; ctx.fillStyle = bodyColor; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.strokeStyle = crackColor; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(e.x + 20, e.y); ctx.lineTo(e.x + 25, e.y + e.height); ctx.moveTo(e.x + e.width - 10, e.y); ctx.lineTo(e.x + e.width - 15, e.y + e.height); ctx.moveTo(e.x, e.y + 30); ctx.lineTo(e.x + e.width, e.y + 40); ctx.stroke(); ctx.shadowColor = coreColor; ctx.shadowBlur = 20; ctx.fillStyle = coreColor; ctx.fillRect(e.x + e.width/2 - 15, e.y + e.height/2 - 15, 30, 30); ctx.shadowBlur = 0; }
 function drawGazerBoss(e, theme) { const eyeBallColor = e.isEnraged ? '#FFF' : '#E0F7FA'; const irisColor = e.isEnraged ? '#D50000' : '#0097A7'; const wingColor = e.isEnraged ? 'rgba(255, 82, 82, 0.6)' : 'rgba(77, 208, 225, 0.5)'; ctx.save(); ctx.fillStyle = wingColor; const wingY = e.y + e.height / 2; ctx.beginPath(); ctx.moveTo(e.x, wingY); ctx.quadraticCurveTo(e.x - 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill(); ctx.moveTo(e.x + e.width, wingY); ctx.quadraticCurveTo(e.x + e.width + 80, wingY - 60, e.x + e.width / 2, wingY); ctx.fill(); ctx.shadowColor = eyeBallColor; ctx.shadowBlur = 15; ctx.fillStyle = eyeBallColor; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; ctx.fillStyle = irisColor; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 3, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, e.width / 6, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+function drawHiveBoss(e, theme) { const mainColor = e.isEnraged ? '#6D4C41' : '#4E342E'; const sacColor = e.isEnraged ? '#FFEB3B' : '#F9A825'; ctx.fillStyle = mainColor; ctx.beginPath(); ctx.ellipse(e.x + e.width / 2, e.y + e.height / 2, e.width / 2, e.height / 2, 0, 0, Math.PI * 2); ctx.fill(); for (let i = 0; i < 3; i++) { const angle = (Date.now() / 500) + (i * Math.PI * 2 / 3); ctx.fillStyle = sacColor; ctx.beginPath(); ctx.arc(e.x + e.width / 2 + Math.cos(angle) * 30, e.y + e.height / 2 + Math.sin(angle) * 20, 15 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2); ctx.fill(); } }
+function drawCrystalBoss(e, theme) { const mainColor = e.isEnraged ? '#F06292' : '#4FC3F7'; const shardColor = e.isEnraged ? '#F48FB1' : '#81D4FA'; ctx.save(); ctx.translate(e.x + e.width / 2, e.y + e.height / 2); ctx.rotate(Date.now() / 1000); ctx.fillStyle = mainColor; ctx.fillRect(-e.width/2, -e.height/2, e.width, e.height); for (let i = 0; i < 4; i++) { ctx.fillStyle = shardColor; ctx.fillRect(-e.width/2 - 20, -10, 20, 20); ctx.rotate(Math.PI / 2); } ctx.restore(); }
+function drawSeraphBoss(e, theme) { ctx.save(); const wingColor = e.isEnraged ? 'rgba(255, 23, 68, 0.7)' : 'rgba(255, 214, 0, 0.7)'; ctx.fillStyle = wingColor; ctx.beginPath(); ctx.moveTo(e.x - 20, e.y + 20); ctx.lineTo(e.x + e.width + 20, e.y + 20); ctx.lineTo(e.x + e.width / 2, e.y - 60); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(e.x - 20, e.y + e.height - 20); ctx.lineTo(e.x + e.width + 20, e.y + e.height - 20); ctx.lineTo(e.x + e.width / 2, e.y + e.height + 60); ctx.closePath(); ctx.fill(); const bodyColor = e.isEnraged ? '#212121' : '#F5F5F5'; const eyeColor = e.isEnraged ? '#F44336' : '#FFD600'; ctx.fillStyle = bodyColor; ctx.fillRect(e.x, e.y, e.width, e.height); ctx.fillStyle = eyeColor; ctx.shadowColor = eyeColor; ctx.shadowBlur = 15; ctx.beginPath(); ctx.arc(e.x + e.width / 2, e.y + e.height / 2, 10, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
 function drawEnemy(e,theme){
     if (e instanceof Boss) { e.spriteFunction(e, theme); return; }
     switch(e.type){ case'imp':drawImp(e,theme);break; case'watcher':drawWatcher(e,theme);break; case'brute':drawBrute(e,theme);break; case'specter':drawSpecter(e,theme);break; case'jester':drawJester(e,theme);break; default:drawImp(e,theme); }
@@ -262,7 +266,7 @@ class Enemy{constructor(type,x,y){
         case'brute': baseStats = {w:45,h:45,hp:50,dmg:20,spd:random(0.5,1),exp:50}; break;
         case'specter': baseStats = {w:35,h:45,hp:25,dmg:15,spd:random(0.8,1.2),exp:40}; break;
         case'jester': baseStats = {w:30,h:40,hp:20,dmg:12,spd:random(1,1.5),exp:45}; this.jesterTimer=random(1000,2000); break;
-        case'boss': break; // Corrigido: Não definir stats de boss aqui
+        case'boss': break;
         default: baseStats = {w:30,h:30,hp:15,dmg:10,spd:random(1,2),exp:25}; break; // Imp
     }
     if (this.type !== 'boss') {
@@ -423,7 +427,6 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         const isBossReward = gameState === 'bossReward';
         const choices = isBossReward ? currentBossRewardChoices : currentUpgradeChoices;
         const cW=220,cH=320,gap=30;const tW=choices.length*cW+(choices.length-1)*gap;const sX=(canvas.width-tW)/2;const y=canvas.height/2-cH/2;choices.forEach((card,index)=>{const x=sX+index*(cW+gap);if(mouse.x>x&&mouse.x<x+cW&&mouse.y>y&&mouse.y<y+cH){playClickSound();if(card.type==='active'){if(!player.activeAbilities.f)player.activeAbilities.f=card;else if(!player.activeAbilities.g)player.activeAbilities.g=card;else if(!player.activeAbilities.j)player.activeAbilities.j=card;}else{const pUpgrade=player.upgrades[card.n];if(pUpgrade){if(pUpgrade.level<MAX_LEVEL){pUpgrade.level++;if(card.scaling)card.scaling(player);}}else{player.upgrades[card.n]={level:1};card.a(player);}}
-        
         if (isBossReward) {
             bossesDefeatedCount++;
             difficultyIsCapped = false;
@@ -443,19 +446,24 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
 
 // --- DEFINIÇÃO DOS TIPOS DE CHEFE ---
 const BOSS_TYPES = [
-    { name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1, attackPatterns: { normal: ['multiShot', 'meteor'], enraged: ['shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } particles.push(new Shockwave(canvas.height - 32)); } },
-    { name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5, attackPatterns: { normal: ['multiShot', 'multiShot'], enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); } }
+    { name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1, attackPatterns: { normal: ['multiShot', 'meteor'], enraged: ['shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; particles.push(new GroundFlash()); if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } } },
+    { name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5, attackPatterns: { normal: ['multiShot', 'multiShot'], enraged: ['shotgunBlast', 'shotgunBlast', 'multiShot'] }, specialAbility: (boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); } },
+    { name: "Enxame da Colmeia", spriteFunction: drawHiveBoss, width: 150, height: 100, baseHp: 3000, baseDamage: 10, baseSpeed: 0.5, attackPatterns: { normal: [], enraged: [] }, specialAbility: (boss) => { for(let i=0; i < (boss.isEnraged ? 4 : 2); i++) { enemies.push(new Enemy('imp', boss.x + random(0, boss.width), boss.y + boss.height)); } if (boss.isEnraged) enemies.push(new Enemy('specter', boss.x + random(0, boss.width), boss.y + boss.height)); } },
+    { name: "Sentinela de Cristal", spriteFunction: drawCrystalBoss, width: 80, height: 80, baseHp: 2800, baseDamage: 50, baseSpeed: 2, attackPatterns: { normal: ['multiShot'], enraged: ['shotgunBlast'] }, specialAbility: (boss) => { const laserY = player.y + player.height/2; particles.push(new LaserIndicator(laserY)); setTimeout(() => { particles.push(new LaserBeam(laserY, boss.isEnraged)); if (player && Math.abs((player.y + player.height/2) - laserY) < 10) { player.takeDamage(boss.damage * 2); } }, 800); } },
+    { name: "Serafim da Ruína", spriteFunction: drawSeraphBoss, width: 100, height: 140, baseHp: 5000, baseDamage: 60, baseSpeed: 1.8, attackPatterns: { normal: ['shotgunBlast', 'meteor'], enraged: ['shotgunBlast', 'shotgunBlast', 'meteor'] }, specialAbility: (boss) => { const attacks = [ (b) => BOSS_TYPES[1].specialAbility(b), (b) => BOSS_TYPES[3].specialAbility(b) ]; const randomAttack = attacks[Math.floor(Math.random()*attacks.length)]; randomAttack(boss); } }
 ];
 
 // --- PARTÍCULAS DE HABILIDADES DE CHEFE ---
+class GroundFlash extends Particle { constructor() { super(0, canvas.height - 32, 0, 0, 0, 'red', 20); } draw() { ctx.save(); ctx.globalAlpha = (this.l / 20) * 0.4; ctx.fillStyle = this.c; terrain.blocks.forEach(b => { if(b.y > canvas.height/2) ctx.fillRect(b.x, b.y, b.width, b.height); }); ctx.restore(); } }
+class LaserIndicator extends Particle { constructor(y) { super(0, y, 0, 0, 0, 'red', 50); } draw() { ctx.save(); ctx.globalAlpha = (this.l / 50) * 0.5; ctx.fillStyle = this.c; ctx.fillRect(0, this.y-1, canvas.width, 3); ctx.restore(); } }
+class LaserBeam extends Particle { constructor(y, isEnraged) { super(0, y, 0, 0, 0, 'white', 30); this.enraged = isEnraged; } update() { super.update(); if(this.enraged && player) { this.y += (player.y + player.height/2 - this.y) * 0.05; if (Math.abs((player.y + player.height/2) - this.y) < 10) player.takeDamage(1); } } draw() { ctx.save(); ctx.globalAlpha = Math.min(1, (30 - this.l)/5); ctx.fillStyle = this.c; ctx.shadowColor = 'red'; ctx.shadowBlur = 20; ctx.fillRect(0, this.y-5, canvas.width, 10); ctx.restore(); } }
 class Shockwave extends Particle { constructor(y) { super(0, y, 0, 0, 0, 'white', 30); this.endX = canvas.width; } draw() { ctx.save(); ctx.globalAlpha = this.l / 30; ctx.fillStyle = '#FFFFFF'; ctx.fillRect(this.x, this.y, this.endX, 4); ctx.restore(); } }
 class SpikeIndicator extends Particle { constructor(x, y, w) { super(x - w/2, y - 10, 0, 0, 0, 'purple', 30); this.width = w; this.height = 10; } draw() { ctx.save(); ctx.globalAlpha = (this.l / 30) * 0.7; ctx.fillStyle = '#E040FB'; ctx.fillRect(this.x, this.y, this.width, this.height); ctx.restore(); } }
 class VoidSpike extends Particle { constructor(x, y, w) { super(x, y, 0, 0, 0, 'purple', 20); this.width = w; this.baseY = y; } draw() { ctx.save(); const progress = (20 - this.l) / 10; const currentHeight = Math.min(1, progress) * 80; ctx.globalAlpha = this.l / 20; ctx.fillStyle = '#AB47BC'; ctx.beginPath(); ctx.moveTo(this.x - this.width/2, this.baseY); ctx.lineTo(this.x, this.baseY - currentHeight); ctx.lineTo(this.x + this.width/2, this.baseY); ctx.closePath(); ctx.fill(); ctx.restore(); } }
 
 class Boss extends Enemy {
     constructor(x, y, bossData) {
-        super('boss', x, y); // Chamada para herança de métodos
-        
+        super('boss', x, y);
         const postBossMultiplier = 1 + (bossesDefeatedCount * 0.15);
         this.name = bossData.name;
         this.spriteFunction = bossData.spriteFunction;
@@ -491,13 +499,15 @@ class Boss extends Enemy {
         }
         if(this.attackTimer<=0 && !this.isTelegraphing){
             const currentPattern = this.isEnraged ? this.attackPatterns.enraged : this.attackPatterns.normal;
-            const nextAttack = currentPattern[this.currentAttackIndex];
-            switch(nextAttack){
-                case 'multiShot': for(let i=-2;i<=2;i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.2)*6,Math.sin(angle+i*0.2)*6,10,'#FF5722',this.damage,false)) } break;
-                case 'shotgunBlast': for(let i = -4; i <= 4; i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.15)*7,Math.sin(angle+i*0.15)*7,8,'#FF1744',this.damage*0.8,false)) } break;
-                case 'meteor': for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0) particles.push(new Meteor())},i*300); break;
+            if (currentPattern.length > 0) {
+                const nextAttack = currentPattern[this.currentAttackIndex];
+                switch(nextAttack){
+                    case 'multiShot': for(let i=-2;i<=2;i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.2)*6,Math.sin(angle+i*0.2)*6,10,'#FF5722',this.damage,false)) } break;
+                    case 'shotgunBlast': for(let i = -4; i <= 4; i++){ const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2)); enemyProjectiles.push(new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle+i*0.15)*7,Math.sin(angle+i*0.15)*7,8,'#FF1744',this.damage*0.8,false)) } break;
+                    case 'meteor': for(let i=0;i<3;i++) setTimeout(()=>{if(this.hp>0) particles.push(new Meteor())},i*300); break;
+                }
+                this.currentAttackIndex=(this.currentAttackIndex+1) % currentPattern.length;
             }
-            this.currentAttackIndex=(this.currentAttackIndex+1) % currentPattern.length;
             this.attackTimer = this.isEnraged ? 2800 : 5000;
         }
     }
