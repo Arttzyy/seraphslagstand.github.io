@@ -180,7 +180,27 @@ function generateBackground() {
         terrain.blocks.forEach(b => { terrainCtx.fillStyle=currentTheme.platform; terrainCtx.fillRect(b.x,b.y,b.width,b.height); terrainCtx.fillStyle=currentTheme.platformTop; terrainCtx.fillRect(b.x,b.y,b.width,4)});
     }
 }
-function drawPlayerSprite(p,theme){const x=p.x; const y=p.y; ctx.save();if(p&&p.stats&&p.stats.activePowers){if(p.stats.activePowers.chronoShift.active){ctx.shadowColor='#81D4FA';ctx.shadowBlur=20;}if(p.stats.activePowers.berserk.active){ctx.shadowColor='#F44336';ctx.shadowBlur=20;}}if(!gameData.settings.performanceMode){ctx.fillStyle=`rgba(0,0,0,0.4)`;ctx.beginPath();ctx.ellipse(x+p.width/2,y+p.height,p.width*.7,p.height*.15,0,0,Math.PI*2);ctx.fill()}const bodyGradient=ctx.createLinearGradient(x,y+20,x,y+p.height);bodyGradient.addColorStop(0,p.invincibilityTimer>0||(p?.stats?.activePowers?.aegis?.active)?'#FFFFFF':theme.text);bodyGradient.addColorStop(1,p.invincibilityTimer>0||(p?.stats?.activePowers?.aegis?.active)?'#CCCCCC':'#BDBDBD');ctx.fillStyle=p.invincibilityTimer>0?'rgba(236,240,241,0.5)':bodyGradient;ctx.fillRect(x,y+20,p.width,p.height-20);const visorGradient=ctx.createLinearGradient(x-5,y+15,x+p.width+10,y+15);visorGradient.addColorStop(0,'#303F9F');visorGradient.addColorStop(0.5,'#5C6BC0');visorGradient.addColorStop(1,'#303F9F');ctx.fillStyle=visorGradient;ctx.fillRect(x-5,y+15,p.width+10,8);ctx.beginPath();ctx.moveTo(x+p.width/2,y-10);ctx.lineTo(x,y+18);ctx.lineTo(x+p.width,y+18);ctx.closePath();ctx.fill();ctx.restore();}
+function drawPlayerSprite(p,theme){
+    const x=p.x; const y=p.y; ctx.save();
+    if(p&&p.stats&&p.stats.activePowers){ if(p.stats.activePowers.chronoShift.active){ctx.shadowColor='#81D4FA';ctx.shadowBlur=20;} if(p.stats.activePowers.berserk.active){ctx.shadowColor='#F44336';ctx.shadowBlur=20;} }
+    if(!gameData.settings.performanceMode){ ctx.fillStyle=`rgba(0,0,0,0.4)`; ctx.beginPath(); ctx.ellipse(x+p.width/2,y+p.height,p.width*.7,p.height*.15,0,0,Math.PI*2); ctx.fill(); }
+    
+    // Corpo
+    const bodyColor = p.invincibilityTimer > 0 ? '#FFFFFF' : '#FFFFFF';
+    ctx.fillStyle = bodyColor;
+    ctx.fillRect(x, y + 20, p.width, p.height - 20);
+
+    // Capacete/Topo
+    ctx.fillStyle = '#42A5F5'; // Azul sólido
+    ctx.beginPath();
+    ctx.moveTo(x + p.width / 2, y);
+    ctx.lineTo(x, y + 22);
+    ctx.lineTo(x + p.width, y + 22);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
 function drawImp(e,theme){ctx.save();const bodyGradient=ctx.createLinearGradient(e.x,e.y,e.x,e.y+e.height);bodyGradient.addColorStop(0,theme.enemy);bodyGradient.addColorStop(1,'#6A0F0F');ctx.fillStyle=bodyGradient;ctx.fillRect(e.x,e.y+e.height*0.2,e.width,e.height*0.8);ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height*0.2,e.width/2,Math.PI,2*Math.PI);ctx.fill();ctx.shadowColor='white';ctx.shadowBlur=5;ctx.fillStyle='#FFF';ctx.fillRect(e.x+e.width*0.2,e.y+e.height*0.4,e.width*0.2,e.height*0.2);ctx.fillRect(e.x+e.width*0.6,e.y+e.height*0.4,e.width*0.2,e.height*0.2);ctx.restore();}
 function drawWatcher(e,theme){ctx.save();const eyeColor='#E0F7FA';const wingColor='#90A4AE';ctx.fillStyle=wingColor;ctx.beginPath();ctx.moveTo(e.x,e.y+e.height/2);ctx.quadraticCurveTo(e.x-e.width*0.5,e.y,e.x+e.width/2,e.y+e.height/2);ctx.moveTo(e.x+e.width,e.y+e.height/2);ctx.quadraticCurveTo(e.x+e.width*1.5,e.y,e.x+e.width/2,e.y+e.height/2);ctx.fill();const eyeGradient=ctx.createRadialGradient(e.x+e.width/2,e.y+e.height/2,e.width/8,e.x+e.width/2,e.y+e.height/2,e.width/2);eyeGradient.addColorStop(0,'#FFFFFF');eyeGradient.addColorStop(0.3,eyeColor);eyeGradient.addColorStop(1,'#4DD0E1');ctx.shadowColor=eyeColor;ctx.shadowBlur=10;ctx.fillStyle=eyeGradient;ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height/2,e.width/2,0,2*Math.PI);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#000';ctx.beginPath();ctx.arc(e.x+e.width/2,e.y+e.height/2,e.width/4,0,2*Math.PI);ctx.fill();ctx.restore();}
 function drawBrute(e,theme){const stoneColor='#795548';ctx.fillStyle=stoneColor;ctx.fillRect(e.x,e.y,e.width,e.height);ctx.fillStyle='#5D4037';ctx.fillRect(e.x+e.width*0.1,e.y+e.height*0.1,e.width*0.8,e.height*0.8);ctx.fillStyle='#D7CCC8';ctx.fillRect(e.x+e.width*0.3,e.y+e.height*0.3,e.width*0.4,e.height*0.4);}
@@ -275,8 +295,8 @@ class FloatingText{constructor(x,y,t,c){this.x=x;this.y=y;this.text=t;this.color
 class BackgroundParticle{constructor(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height;this.size=random(1,3);this.speedY=random(0.1,0.5);this.opacity=random(0.2,0.8);}update(){this.y-=this.speedY;if(this.y<0){this.y=canvas.height;this.x=Math.random()*canvas.width;}}draw(){ctx.fillStyle=`rgba(255, 255, 224, ${this.opacity})`;ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fill();}}
 class Spaceship{constructor(){this.w=random(20,40);this.h=this.w*1.5;this.speed=random(1,3);const edge=Math.floor(random(0,3));if(edge===0){this.x=-this.w;this.y=random(0,canvas.height*0.6);this.angle=random(-0.3,0.3);}else if(edge===1){this.x=canvas.width+this.w;this.y=random(0,canvas.height*0.6);this.angle=Math.PI+random(-0.3,0.3);}else{this.x=random(0,canvas.width);this.y=-this.h;this.angle=Math.PI/2+random(-0.3,0.3);}this.color1='#B0BEC5';this.color2='#78909C';}
 update(){this.x+=Math.cos(this.angle)*this.speed;this.y+=Math.sin(this.angle)*this.speed;if(this.x<-100||this.x>canvas.width+100||this.y>canvas.height+100){this.dead=true;}}draw(){drawSpaceship(this);}}
-class Meteor extends Particle {constructor(){super(player.x,-50,0,8,20,'orange',300);this.targetX=player.x;this.followTimer=2000;this.visible=false;}
-update(){ if(this.followTimer>0){this.targetX=player.x;this.x=this.targetX;this.followTimer-=16.67;}else{this.visible=true;this.y+=this.v.y;} if(this.visible&&player&&checkCollision({x:this.x-this.s,y:this.y-this.s,width:this.s*2,height:this.s*2},player)){player.takeDamage(40);this.l=0;} if(this.y>canvas.height)this.l=0; }
+class Meteor extends Particle {constructor(){const targetPlayer = player || {x: canvas.width/2}; super(targetPlayer.x,-50,0,8,20,'orange',300);this.targetX=targetPlayer.x;this.followTimer=2000;this.visible=false;}
+update(){ if(this.followTimer>0){if(player)this.targetX=player.x;this.x=this.targetX;this.followTimer-=16.67;}else{this.visible=true;this.y+=this.v.y;} if(this.visible&&player&&checkCollision({x:this.x-this.s,y:this.y-this.s,width:this.s*2,height:this.s*2},player)){player.takeDamage(40);this.l=0;} if(this.y>canvas.height)this.l=0; }
 draw(){if(this.visible){ctx.save();ctx.fillStyle=this.c;ctx.shadowColor='red';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(this.x,this.y,this.s,0,2*Math.PI);ctx.fill();ctx.restore();}}}
 function random(min,max){return Math.random()*(max-min)+min}
 function checkCollision(r1,r2){return r1.x<r2.x+r2.width&&r1.x+r1.width>r2.x&&r1.y<r2.y+r2.height&&r1.y+r1.height>r2.y}
@@ -298,7 +318,7 @@ playKillSound();if(!gameData.settings.performanceMode){for(let p=0;p<15;p++){par
 if(proj.piercesLeft>0){proj.piercesLeft--;}else{let shouldChain=Math.random()<player.stats.chainChance&&proj.bounces>0;let nextTarget=null;if(shouldChain){const otherEnemies=enemies.filter(e=>!proj.hitEnemies.includes(e)).sort((a,b)=>Math.hypot(proj.x-a.x,proj.y-a.y)-Math.hypot(proj.x-b.x,proj.y-b.y));if(otherEnemies.length>0)nextTarget=otherEnemies[0];}if(nextTarget){const angle=Math.atan2(nextTarget.y-proj.y,nextTarget.x-proj.x);proj.velocity.x=Math.cos(angle)*15;proj.velocity.y=Math.sin(angle)*15;proj.bounces--;}else{playerProjectiles.splice(projIndex,1);projectileRemoved=true;}}break;}}}if(projectileRemoved)continue;}
 enemyProjectiles.forEach((proj,index)=>{if(player&&checkCollision({x:proj.x,y:proj.y,width:proj.radius,height:proj.radius},player)){player.takeDamage(proj.damage);enemyProjectiles.splice(index,1)}if(proj.split){if(!checkCollision({x:proj.x,y:proj.y,width:proj.radius*2,height:proj.radius*2},{x:0,y:0,width:canvas.width,height:canvas.height})||proj.splitTimer<=0){for(let i=0;i<3;i++){enemyProjectiles.push(new Projectile(proj.x,proj.y,random(-5,5),random(-5,5),4,proj.color,proj.damage/2,false))}enemyProjectiles.splice(index,1)}else if(proj.splitTimer)proj.splitTimer-=16.67;}})}
 let menuButtons=[],settingsButtons=[],pauseButtons=[],bindsButtons=[];
-function setupMenus(){ menuButtons=[ {x:canvas.width/2-100,y:480,w:200,h:50,text:'Start',action:()=>{playClickSound();gameDifficulty='medium';initGame();gameState='playing';}}, {x:canvas.width/2-100,y:540,w:200,h:50,text:'Settings',action:()=>{playClickSound();menuState='settings'}}, {x:canvas.width/2-100,y:600,w:200,h:50,text:'Binds',action:()=>{playClickSound();menuState='binds'}} ]; pauseButtons=[ {x:canvas.width/2-100,y:300,w:200,h:50,text:'Resume',action:()=>{playClickSound();gameState='playing';if(ytPlayer)ytPlayer.playVideo();}}, {x:canvas.width/2-100,y:360,w:200,h:50,text:'Quit to Menu',action:()=>{playClickSound();gameState='menu';menuState='main';fetchLeaderboard(); if (isGodModeActive) toggleGodMode();}} ]; settingsButtons=[ {x:canvas.width/2-150,y:300,w:300,h:50,text:'Quality',type:'quality',action:()=>{playClickSound();if(gameData.settings.performanceMode){gameData.settings.performanceMode=false;saveGameData();generateBackground()}}}, {x:canvas.width/2-150,y:360,w:300,h:50,text:'Performance',type:'performance',action:()=>{playClickSound();if(!gameData.settings.performanceMode){gameData.settings.performanceMode=true;saveGameData();generateBackground()}}}, {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}} ]; bindsButtons=[ {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}} ]; }
+function setupMenus(){ menuButtons=[ {x:canvas.width/2-100,y:480,w:200,h:50,text:'Start',action:()=>{playClickSound();gameDifficulty='medium';initGame();gameState='playing';}}, {x:canvas.width/2-100,y:540,w:200,h:50,text:'Settings',action:()=>{playClickSound();menuState='settings'}}, {x:canvas.width/2-100,y:600,w:200,h:50,text:'Binds',action:()=>{playClickSound();menuState='binds'}} ]; pauseButtons=[ {x:canvas.width/2-100,y:300,w:200,h:50,text:'Resume',action:()=>{playClickSound();gameState='playing';if(ytPlayer)ytPlayer.playVideo();}}, {x:canvas.width/2-100,y:360,w:200,h:50,text:'Quit to Menu',action:()=>{playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if (isGodModeActive) toggleGodMode();}} ]; settingsButtons=[ {x:canvas.width/2-150,y:300,w:300,h:50,text:'Quality',type:'quality',action:()=>{playClickSound();if(gameData.settings.performanceMode){gameData.settings.performanceMode=false;saveGameData();generateBackground()}}}, {x:canvas.width/2-150,y:360,w:300,h:50,text:'Performance',type:'performance',action:()=>{playClickSound();if(!gameData.settings.performanceMode){gameData.settings.performanceMode=true;saveGameData();generateBackground()}}}, {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}} ]; bindsButtons=[ {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}} ]; }
 function drawMenu(){ctx.drawImage(skyCanvas,0,0);if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}ctx.drawImage(terrainCanvas,0,0);ctx.textAlign='center';
     if(menuState==='main'){ctx.save();ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillStyle=currentTheme.highlight;ctx.font=`54px ${FONT_PRIMARY}`;ctx.fillText("Seraph's Lag Stand",canvas.width/2,150);ctx.fillStyle=currentTheme.text;ctx.font=`12px ${FONT_PRIMARY}`;ctx.fillText("(sim, eu pensei nesse nome)",canvas.width/2,180);ctx.restore();drawPlayerSprite({x:canvas.width/2-16,y:350,width:32,height:48,invincibilityTimer:0},currentTheme);menuButtons.forEach(btn=>drawButton(btn));drawLeaderboard(850,250,400,400);}
     else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);}
@@ -339,11 +359,7 @@ function updatePlaying(){
     bossTimer-=16.67;
     if (!difficultyIsCapped) { cappedDifficultyValue = 1 + gameTime / 60000; }
     if(bossTimer<=0&&!bossIsActive){
-        playBossSpawnSound();
-        const bossData = BOSS_TYPES[bossesDefeatedCount % BOSS_TYPES.length];
-        enemies.push(new Boss(canvas.width / 2 - 60, -120, bossData));
-        bossIsActive=true;
-        bossTimer=18e4;
+        summonNextBoss();
     }
     if(!bossIsActive)spawnEnemies();
     if(!gameData.settings.performanceMode){spawnSpaceship();backgroundSpaceships.forEach(s=>s.update());backgroundSpaceships=backgroundSpaceships.filter(s=>!s.dead);}
@@ -388,7 +404,7 @@ window.addEventListener('keyup',e=>{
 canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;if(gameState==='menu'&&menuState==='settings'&&mouse.down){const s={x:canvas.width/2-150,y:460,w:300};if(mouse.x>=s.x&&mouse.x<=s.x+s.w){let v=Math.round((mouse.x-s.x)/s.w*100);gameData.settings.volume=Math.max(0,Math.min(100,v));if(ytPlayer)ytPlayer.setVolume(gameData.settings.volume)}}});
 canvas.addEventListener('mousedown',()=>{mouse.down=true});
 canvas.addEventListener('mouseup',()=>{mouse.down=false;if(gameState==='menu'&&menuState==='settings'){saveGameData();}});
-canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==='gameOver'&&restartTimer<=0){playClickSound();gameState='menu';menuState='main';fetchLeaderboard(); if(ytPlayer)ytPlayer.playVideo(); return;}
+canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==='gameOver'&&restartTimer<=0){playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if(ytPlayer)ytPlayer.playVideo(); return;}
     if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if(menuState==='binds')currentButtons=bindsButtons;currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='paused'){pauseButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='levelUp' || gameState==='bossReward'){
@@ -407,7 +423,7 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
         }
         gameState='playing'
     }})}
-    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cH){playClickSound();card.a(player);gameState='playing';}});
+    else if(gameState==='pact'){const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);if(mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH){playClickSound();card.a(player);gameState='playing';}});
     }
 });
 
@@ -436,12 +452,13 @@ class Boss extends Enemy {
         this.speed = bossData.baseSpeed * (1 + (bossesDefeatedCount * 0.05));
         this.attackPatterns = bossData.attackPatterns;
         this.specialAbility = bossData.specialAbility;
-        this.meteorTimers = [null, null, null]; // CORREÇÃO: Garante que a propriedade existe.
+        this.meteorTimers = [null, null, null];
         this.currentAttackIndex=0; this.attackTimer=5000;
         this.isEnraged=false; this.enrageHelperTimer=7000;
         this.qteTimer = random(10000, 15000);
         this.specialAttackTimer = random(8000, 12000);
         this.isTelegraphing = false; this.telegraphDuration = 1000;
+        this.type = 'boss'; // Garante que o tipo seja 'boss' para lógica de não congelamento, etc.
     }
     update() {
         if (this.isFrozen) return;
@@ -473,16 +490,14 @@ class Boss extends Enemy {
     }
 }
 
-// --- NOVO: FUNÇÃO DE CHEAT PARA INVOCAR O CHEFE ---
+// --- FUNÇÃO DE CHEAT PARA INVOCAR O CHEFE ---
 function summonNextBoss() {
     if (!player || bossIsActive) return;
-    enemies = [];
-    playerProjectiles = [];
-    enemyProjectiles = [];
-    particles = [];
+    enemies = enemies.filter(e => e instanceof Boss); // Remove todos os inimigos menos os chefes (caso algum já exista por bug)
+    playerProjectiles = []; enemyProjectiles = []; particles = [];
     playBossSpawnSound();
     const bossData = BOSS_TYPES[bossesDefeatedCount % BOSS_TYPES.length];
-    enemies.push(new Boss(canvas.width / 2 - 60, -120, bossData));
+    enemies.push(new Boss(canvas.width / 2 - 60, 100, bossData)); // Posição Y ajustada para aparecer na tela
     bossIsActive = true;
     bossTimer = 180000;
     floatingTexts.push(new FloatingText(player.x, player.y - 40, "SUMMONING BOSS!", "orange"));
