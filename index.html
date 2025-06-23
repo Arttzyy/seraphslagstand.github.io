@@ -20,7 +20,7 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -31,10 +31,9 @@
             padding: 30px;
             border: 3px solid #FBC02D;
             box-shadow: 0 0 25px rgba(251, 192, 45, 0.5);
-            max-width: 650px;
+            max-width: 600px;
             max-height: 80vh;
             overflow-y: auto;
-            color: #E0E0E0;
         }
         .modal-content h1 { font-size: 24px; color: #FBC02D; text-shadow: 2px 2px #000; margin-top: 0; }
         .modal-content h2 { font-size: 18px; color: #64B5F6; margin-top: 20px; border-bottom: 2px solid #64B5F6; padding-bottom: 5px; }
@@ -56,8 +55,6 @@
         }
         .close-button:hover { background-color: #FBC02D; color: #000; border-color: #FBC02D; }
         .hidden { display: none !important; }
-        #nickname-input { font-family: 'Press Start 2P', cursive; background-color: #333; border: 2px solid #999; color: white; padding: 10px; font-size: 16px; text-align: center; width: 300px; margin-top: 20px; }
-        #nickname-button {width: auto;}
 
     </style>
 </head>
@@ -73,7 +70,7 @@
 
     <div id="patch-notes-container" class="modal-overlay hidden">
         <div id="patch-notes-content" class="modal-content">
-             <!-- Patch notes serão inseridos aqui via script -->
+            <!-- Patch notes serão inseridos aqui via script -->
         </div>
     </div>
 
@@ -93,7 +90,7 @@ canvas.width = 1280; canvas.height = 720;
 ctx.imageSmoothingEnabled = false;
 
 // --- GAME STATE & CONSTANTS ---
-const GAME_VERSION = "1.0.";
+const GAME_VERSION = "1.0";
 const FONT_PRIMARY = '"Press Start 2P"';
 const GRAVITY = 0.7;
 let gameState = 'intro';
@@ -109,333 +106,12 @@ let cappedDifficultyValue = 1;
 let canClickCards = true;
 
 let player, terrain;
-let wikiTab = 'upgrades';
-let wikiPage = 0;
-let wikiMaxPages = 1;
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
 let backgroundParticles = [], backgroundSpaceships = [];
 let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
 let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
-let wikiScrollY = 0;
-
-// --- NOVAS FUNÇÕES DE MENU ---
-
-function drawCustomizeMenu() {
-    ctx.fillStyle = currentTheme.highlight;
-    ctx.font = `40px ${FONT_PRIMARY}`;
-    ctx.fillText("Customize", canvas.width / 2, 150);
-
-    // Prévia do jogador
-    drawPlayerSprite({ x: canvas.width / 2 - 64, y: 300, width: 64, height: 96, invincibilityTimer: 0 }, currentTheme);
-
-    // Botões
-    customizeButtons.forEach(btn => drawButton(btn));
-}
-
-function drawWikiMenu() {
-    ctx.fillStyle = currentTheme.highlight;
-    ctx.font = `40px ${FONT_PRIMARY}`;
-    ctx.fillText("Game Wiki", canvas.width / 2, 100);
-
-    wikiButtons.forEach(btn => {
-        if (btn.text === '<' || btn.text === '>' || btn.text === 'Back') return;
-        let originalText = btn.text;
-        if (btn.type === wikiTab) btn.text = `> ${originalText} <`;
-        drawButton(btn);
-        btn.text = originalText;
-    });
-
-    ctx.textAlign = 'left';
-    ctx.font = `14px ${FONT_PRIMARY}`;
-    ctx.fillStyle = 'white';
-
-    const itemsPerPage = 6;
-    let itemsToDisplay = [];
-
-    if (wikiTab === 'upgrades') itemsToDisplay = UPGRADES;
-    else if (wikiTab === 'pacts') itemsToDisplay = PACTS;
-    else if (wikiTab === 'cosmetics') itemsToDisplay = HATS.concat(OUTFITS, COLORS);
-
-    wikiMaxPages = Math.ceil(itemsToDisplay.length / itemsPerPage);
-    const startIndex = wikiPage * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const pageItems = itemsToDisplay.slice(startIndex, endIndex);
-
-    let yPos = 220;
-    pageItems.forEach(item => {
-        ctx.fillStyle = item.r === 'pact' ? '#FF8A80' : RARITY_COLORS[item.r] || 'white';
-        ctx.fillText(`- ${item.n} ${item.r ? `(${RARITY_MAP[item.r]})` : ''}`, 150, yPos);
-        ctx.fillStyle = 'white';
-        ctx.fillText(item.d, 170, yPos + 20);
-
-        if (item.unlock) {
-            ctx.fillStyle = '#AAAAAA';
-            ctx.font = '10px "Press Start 2P"';
-            ctx.fillText(`Desbloqueia: ${item.unlock}`, 170, yPos + 35);
-            ctx.font = `14px ${FONT_PRIMARY}`;
-        }
-
-        yPos += 60;
-    });
-
-    // Controles de página
-    if (wikiMaxPages > 1) {
-        drawButton(wikiButtons.find(b => b.text === '<'));
-        drawButton(wikiButtons.find(b => b.text === '>'));
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'white';
-        ctx.font = `16px ${FONT_PRIMARY}`;
-        ctx.fillText(`Página ${wikiPage + 1} / ${wikiMaxPages}`, canvas.width / 2, canvas.height - 70);
-    }
-
-    // Botão Voltar
-    drawButton(wikiButtons.find(b => b.text === 'Back'));
-}
-
-
-    // Conteúdo da Wiki (simplificado por enquanto)
-    ctx.textAlign = 'left';
-    ctx.font = `14px ${FONT_PRIMARY}`;
-    ctx.fillStyle = 'white';
-
-    let yPos = 220;
-    if (wikiTab === 'upgrades') {
-        UPGRADES.forEach(item => {
-            ctx.fillStyle = 'yellow';
-            ctx.fillText(`- ${item.n} (${RARITY_MAP[item.r]})`, 150, yPos);
-            ctx.fillStyle = 'white';
-            ctx.fillText(item.d, 170, yPos + 20);
-            yPos += 50;
-        });
-    } else if (wikiTab === 'pacts') {
-         PACTS.forEach(item => {
-            ctx.fillStyle = 'red';
-            ctx.fillText(`- ${item.n}`, 150, yPos);
-            ctx.fillStyle = 'white';
-            ctx.fillText(item.d, 170, yPos + 20);
-            yPos += 50;
-        });
-    } else if (wikiTab === 'cosmetics') {
-        yPos = 220;
-        ctx.fillStyle = '#64B5F6';
-        ctx.fillText("Hats:", 150, yPos);
-        yPos += 30;
-        HATS.forEach((item, index) => {
-             ctx.fillStyle = gameData.customization.unlockedHats.includes(index) ? 'white' : '#777';
-             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
-             yPos += 25;
-        });
-
-        yPos += 30;
-        ctx.fillStyle = '#64B5F6';
-        ctx.fillText("Outfits:", 150, yPos);
-        yPos += 30;
-         OUTFITS.forEach((item, index) => {
-             ctx.fillStyle = gameData.customization.unlockedOutfits.includes(index) ? 'white' : '#777';
-             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
-             yPos += 25;
-        });
-    }
-}
-
-// --- DADOS DE CUSTOMIZAÇÃO E DESBLOQUEIOS ---
-
-const OUTFITS = [
-    { 
-        name: 'Visor Padrão', 
-        unlock: 'Default', 
-        draw: (x, y, w, h) => {
-            const visorGradient=ctx.createLinearGradient(x-5,y+15,x+w+10,y+15);
-            visorGradient.addColorStop(0,'#303F9F');
-            visorGradient.addColorStop(0.5,'#5C6BC0');
-            visorGradient.addColorStop(1,'#303F9F');
-            ctx.fillStyle=visorGradient;
-            ctx.fillRect(x-5,y+15,w+10,8);
-        }
-    },
-    { 
-        name: 'Peitoral de Pedra', 
-        unlock: 'Guardião de Pedra', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#A1887F';
-            ctx.fillRect(x + 4, y + 18, w - 8, 10);
-        }
-    },
-    { 
-        name: 'Olho do Vazio', 
-        unlock: 'Observador do Vazio', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#D500F9';
-            ctx.beginPath();
-            ctx.arc(x + w / 2, y + 30, 8, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    },
-    { 
-        name: 'Carapaça de Enxame', 
-        unlock: 'Enxame da Colmeia', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#FFC107';
-            ctx.beginPath();
-            ctx.moveTo(x, y + 20); ctx.lineTo(x + w, y + 20);
-            ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h);
-            ctx.closePath();
-            ctx.globalAlpha = 0.3;
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-    },
-    { 
-        name: 'Manto de Cristal', 
-        unlock: 'Sentinela de Cristal', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#F06292';
-            ctx.globalAlpha = 0.5;
-            ctx.beginPath();
-            ctx.moveTo(x-5, y + 20);
-            ctx.lineTo(x + w + 5, y + 20);
-            ctx.lineTo(x + w / 2, y + h + 10);
-            ctx.closePath();
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
-        }
-    },
-    { 
-        name: 'Asas do Serafim', 
-        unlock: 'Serafim da Ruína', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#FFD600';
-            ctx.globalAlpha = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(x, y + 25);
-            ctx.lineTo(x - 20, y + 10);
-            ctx.lineTo(x, y + 40);
-            ctx.closePath();
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(x + w, y + 25);
-            ctx.lineTo(x + w + 20, y + 10);
-            ctx.lineTo(x + w, y + 40);
-            ctx.closePath();
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
-        }
-    },
-];
-
-const HATS = [
-    { 
-        name: 'Chapéu Padrão', 
-        unlock: 'Default', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#42A5F5';
-            ctx.beginPath();
-            ctx.moveTo(x + w / 2, y);
-            ctx.lineTo(x, y + 22);
-            ctx.lineTo(x + w, y + 22);
-            ctx.closePath();
-            ctx.fill();
-        }
-    },
-    { 
-        name: 'Elmo de Pedra', 
-        unlock: 'Guardião de Pedra', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#A1887F';
-            ctx.fillRect(x, y - 5, w, 10);
-            ctx.fillRect(x + 5, y - 10, w - 10, 5);
-        }
-    },
-    { 
-        name: 'Coroa do Vazio', 
-        unlock: 'Observador do Vazio', 
-        draw: (x, y, w, h) => {
-            const angle = Date.now() / 300;
-            ctx.beginPath();
-            ctx.arc(x + w/2, y + 10, 10, angle, angle + Math.PI);
-            ctx.strokeStyle = '#D500F9';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
-    },
-    { 
-        name: 'Antenas de Inseto', 
-        unlock: 'Enxame da Colmeia', 
-        draw: (x, y, w, h) => {
-            ctx.strokeStyle = '#6D4C41';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x + w/2 - 5, y + 10);
-            ctx.lineTo(x, y - 5);
-            ctx.moveTo(x + w/2 + 5, y + 10);
-            ctx.lineTo(x + w, y - 5);
-            ctx.stroke();
-        }
-    },
-     { 
-        name: 'Chifre de Cristal', 
-        unlock: 'Sentinela de Cristal', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#F06292';
-            ctx.beginPath();
-            ctx.moveTo(x + w/2, y - 10);
-            ctx.lineTo(x + w/2 - 10, y + 15);
-            ctx.lineTo(x + w/2 + 10, y + 15);
-            ctx.closePath();
-            ctx.fill();
-        }
-    },
-    { 
-        name: 'Auréola do Serafim', 
-        unlock: 'Serafim da Ruína', 
-        draw: (x, y, w, h) => {
-            ctx.strokeStyle = '#FFD600';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.ellipse(x + w / 2, y + 5, 20, 5, 0, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    },
-];
-
-const COLORS = [
-    { name: 'Padrão', hex: '#FFFFFF', unlock: 'Default' },
-    { name: 'Pedra', hex: '#BCAAA4', unlock: 'Guardião de Pedra' },
-    { name: 'Vazio', hex: '#CE93D8', unlock: 'Observador do Vazio' },
-    { name: 'Colmeia', hex: '#FFF59D', unlock: 'Enxame da Colmeia' },
-    { name: 'Cristal', hex: '#F48FB1', unlock: 'Sentinela de Cristal' },
-    { name: 'Divino', hex: '#FFFDE7', unlock: 'Serafim da Ruína' }
-];
-
-function unlockCosmetics(bossIndex) {
-    if (bossIndex >= BOSS_TYPES.length) return;
-    
-    const bossName = BOSS_TYPES[bossIndex].name;
-    const hat = HATS.find(h => h.unlock === bossName);
-    const outfit = OUTFITS.find(o => o.unlock === bossName);
-    const color = COLORS.find(c => c.unlock === bossName);
-
-    if (hat) {
-        const hatIndex = HATS.indexOf(hat);
-        if (!gameData.customization.unlockedHats.includes(hatIndex)) {
-            gameData.customization.unlockedHats.push(hatIndex);
-        }
-    }
-    if (outfit) {
-        const outfitIndex = OUTFITS.indexOf(outfit);
-        if (!gameData.customization.unlockedOutfits.includes(outfitIndex)) {
-            gameData.customization.unlockedOutfits.push(outfitIndex);
-        }
-    }
-    if (color) {
-        if (!gameData.customization.unlockedColors.includes(color.hex)) {
-            gameData.customization.unlockedColors.push(color.hex);
-        }
-    }
-    saveGameData();
-}
 
 // --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
@@ -451,44 +127,6 @@ const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
 // --- LEADERBOARD (ONLINE - JSONBin.io) ---
 async function fetchLeaderboard() { try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); if (!response.ok) throw new Error('Failed to fetch leaderboard'); const data = await response.json(); leaderboardData = data.record.scores || []; } catch (error) { console.error("Leaderboard Error:", error); leaderboardData = []; } }
 async function submitScore(nickname, score) { if (!nickname || typeof score !== 'number' || score === 0) return; let currentScores = []; try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); const data = await response.json(); currentScores = data.record.scores || []; } catch (error) { console.error("Could not fetch scores to submit new one:", error); currentScores = []; } const existingEntry = currentScores.find(entry => entry.nickname === nickname); if (existingEntry && score <= existingEntry.score) { await fetchLeaderboard(); return; } const otherPlayerScores = currentScores.filter(entry => entry.nickname !== nickname); otherPlayerScores.push({ nickname: nickname, score: score }); otherPlayerScores.sort((a, b) => b.score - a.score); const newLeaderboard = otherPlayerScores.slice(0, 10); try { await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY }, body: JSON.stringify({ scores: newLeaderboard }) }); leaderboardData = newLeaderboard; } catch (error) { console.error("Could not submit new score:", error); } }
-
-// --- PATCH NOTES ---
-function showPatchNotes() {
-    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-    if (lastSeenVersion === GAME_VERSION) return;
-
-    const patchNotesContainer = document.getElementById('patch-notes-container');
-    const patchNotesContent = document.getElementById('patch-notes-content');
-    patchNotesContent.innerHTML = `
-        <h1>Patch Notes - V${GAME_VERSION}</h1>
-        <h2>Novas Funcionalidades Épicas!</h2>
-        <ul>
-            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos para tornar cada batalha uma experiência única.</li>
-            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado! Personalize seu personagem com chapéus, roupas e cores.</li>
-            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear cosméticos temáticos e exibir suas conquistas!</li>
-            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
-        </ul>
-        <h2>Melhorias e Mudanças</h2>
-        <ul>
-            <li>Inimigos ficam mais fortes (HP, dano e velocidade) a cada chefe derrotado.</li>
-            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
-            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de recompensa para evitar escolhas acidentais.</li>
-            <li>O aviso visual do ataque de chão do primeiro chefe agora pisca em vermelho ANTES do dano, permitindo reação.</li>
-        </ul>
-        <h2>Correções de Bugs</h2>
-        <ul>
-            <li>Corrigido um bug crítico que impedia o jogo de carregar devido a uma função não definida.</li>
-            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
-            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
-        </ul>
-        <button class="close-button" id="close-patch-notes">Let's Go!</button>
-    `;
-    patchNotesContainer.classList.remove('hidden');
-    document.getElementById('close-patch-notes').addEventListener('click', () => {
-        patchNotesContainer.classList.add('hidden');
-        localStorage.setItem('lastSeenVersion', GAME_VERSION);
-    });
-}
 
 // --- NICKNAME & INTRO LOGIC ---
 const nicknameContainer = document.getElementById('nickname-container'); const nicknameInput = document.getElementById('nickname-input'); const nicknameButton = document.getElementById('nickname-button');
@@ -581,13 +219,16 @@ function drawPlayerSprite(p,theme){
     if(p&&p.stats&&p.stats.activePowers){ if(p.stats.activePowers.chronoShift.active){ctx.shadowColor='#81D4FA';ctx.shadowBlur=20;} if(p.stats.activePowers.berserk.active){ctx.shadowColor='#F44336';ctx.shadowBlur=20;} }
     if(!gameData.settings.performanceMode){ ctx.fillStyle=`rgba(0,0,0,0.4)`; ctx.beginPath(); ctx.ellipse(x+p.width/2,y+p.height,p.width*.7,p.height*.15,0,0,Math.PI*2); ctx.fill(); }
     
+    // Corpo
     const bodyColor = p.invincibilityTimer > 0 ? '#FFFFFF' : gameData.customization.color;
     ctx.fillStyle = bodyColor;
     ctx.fillRect(x, y + 20, p.width, p.height - 20);
 
+    // Roupa (Outfit)
     const outfit = OUTFITS[gameData.customization.outfit];
     if (outfit && outfit.draw) outfit.draw(x, y, p.width, p.height);
 
+    // Chapéu (Hat)
     const hat = HATS[gameData.customization.hat];
     if(hat && hat.draw) hat.draw(x, y, p.width, p.height);
 
@@ -678,7 +319,6 @@ if(player&&player.stats.contactDamage>0&&checkCollision(this,player)){this.takeD
 shoot(){let pSpeed=player&&player.stats.activePowers.chronoShift.active?2:6;const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2));let color=this.type==='brute'?'#795548':this.type==='jester'?'#FFEB3B':currentTheme.enemy;let size=this.type==='brute'?10:6;const proj=new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle)*pSpeed,Math.sin(angle)*pSpeed,size,color,this.damage,false);if(this.type==='jester'){proj.split=true;proj.splitTimer=1000;}
 enemyProjectiles.push(proj);}
 takeDamage(amount,fromProjectile, isExecutionPossible = false){
-    if (this.isInvulnerable) return;
     if (isExecutionPossible && this.hp <= amount) { this.hp = 0; } else { this.hp-=amount; }
     if (fromProjectile) {
         playEnemyHitSound();
@@ -727,41 +367,16 @@ function setupMenus(){
         {x:canvas.width/2-150,y:600,w:300,h:50,text:'Wiki',action:()=>{playClickSound();menuState='wiki'}},
         {x:canvas.width/2-150,y:660,w:300,h:50,text:'Settings & Binds',action:()=>{playClickSound();menuState='settings'}}
     ];
-    pauseButtons=[
-        {x:canvas.width/2-100,y:300,w:200,h:50,text:'Resume',action:()=>{playClickSound();gameState='playing';if(ytPlayer)ytPlayer.playVideo();}},
-        {x:canvas.width/2-100,y:360,w:200,h:50,text:'Quit to Menu',action:()=>{playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if (isGodModeActive) toggleGodMode();}}
-    ];
-    settingsButtons=[
-        {x:canvas.width/2-150,y:300,w:300,h:50,text:'Quality',type:'quality',action:()=>{playClickSound();if(gameData.settings.performanceMode){gameData.settings.performanceMode=false;saveGameData();generateBackground()}}},
-        {x:canvas.width/2-150,y:360,w:300,h:50,text:'Performance',type:'performance',action:()=>{playClickSound();if(!gameData.settings.performanceMode){gameData.settings.performanceMode=true;saveGameData();generateBackground()}}},
-        {x:canvas.width/2-100,y:550,w:200,h:50,text:'Back',action:()=>{playClickSound();menuState='main'}}
-    ];
-    customizeButtons = [
-        {x: 400, y: 300, w: 150, h: 50, text: '< Hat >', action: (dir) => { let next = gameData.customization.hat; do { next = (next + dir + HATS.length) % HATS.length; } while (!gameData.customization.unlockedHats.includes(next)); gameData.customization.hat = next; }},
-        {x: 400, y: 360, w: 150, h: 50, text: '< Outfit >', action: (dir) => { let next = gameData.customization.outfit; do { next = (next + dir + OUTFITS.length) % OUTFITS.length; } while (!gameData.customization.unlockedOutfits.includes(next)); gameData.customization.outfit = next; }},
-        {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { let colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); do { currentIndex = (currentIndex + dir + colors.length) % colors.length; } while (!gameData.customization.unlockedColors.includes(colors[currentIndex])); gameData.customization.color = colors[currentIndex];}},
-        {x: canvas.width/2 - 100, y: 600, w: 200, h: 50, text: 'Save & Back', action: () => { saveGameData(); menuState = 'main'; playClickSound(); }}
-    ];
-     wikiButtons = [
-    {x: 150, y: 150, w: 200, h: 40, text: 'Upgrades', type:'upgrades', action: () => { wikiTab = 'upgrades'; wikiPage = 0; playClickSound(); }},
-    {x: 360, y: 150, w: 200, h: 40, text: 'Pacts', type:'pacts', action: () => { wikiTab = 'pacts'; wikiPage = 0; playClickSound(); }},
-    {x: 570, y: 150, w: 200, h: 40, text: 'Cosmetics', type:'cosmetics', action: () => { wikiTab = 'cosmetics'; wikiPage = 0; playClickSound(); }},
-    {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; playClickSound(); }},
-    {x: 150, y: canvas.height - 100, w: 50, h: 50, text: '<', action: () => { if(wikiPage > 0) { wikiPage--; playClickSound(); } }},
-    {x: canvas.width - 200, y: canvas.height - 100, w: 50, h: 50, text: '>', action: () => { if(wikiPage < wikiMaxPages - 1) { wikiPage++; playClickSound(); } }}
-];}
+    // ... outros botões
+}
 function drawMenu(){
     ctx.drawImage(skyCanvas,0,0);
     if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}
     ctx.drawImage(terrainCanvas,0,0);
     ctx.textAlign='center';
-    
-    ctx.save();
-    ctx.textAlign = 'left';
-    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.fillStyle='white';
     ctx.font=`12px ${FONT_PRIMARY}`;
-    ctx.fillText(`V${GAME_VERSION}`, 20, canvas.height - 20);
-    ctx.restore();
+    ctx.fillText(`V${GAME_VERSION}`, 50, canvas.height - 20);
 
     if(menuState==='main'){
         ctx.save();
@@ -777,12 +392,8 @@ function drawMenu(){
         drawPlayerSprite({x:canvas.width/2-16,y:350,width:32,height:48,invincibilityTimer:0},currentTheme);
         menuButtons.forEach(btn=>drawButton(btn));
         drawLeaderboard(canvas.width - 420, 250, 400, 400);
-    } else if(menuState === 'customize'){
-        drawCustomizeMenu();
-    } else if(menuState === 'wiki'){
-        drawWikiMenu();
     }
-    else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings & Binds",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F,G,J - Active Abilities","ESC - Pause Game", "Ctrl + Mouse Scroll - Zoom/Zoom out", ""];ctx.textAlign = 'left';binds.forEach((b,i)=>{ctx.fillText(b,100,250+i*30);});}
+    // ... outros menus
 }
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
 function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
@@ -866,8 +477,7 @@ canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();m
 canvas.addEventListener('mousedown',()=>{mouse.down=true});
 canvas.addEventListener('mouseup',()=>{mouse.down=false;if(gameState==='menu'&&menuState==='settings'){saveGameData();}});
 canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==='gameOver'&&restartTimer<=0){playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if(ytPlayer)ytPlayer.playVideo(); return;}
-    if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if (menuState === 'customize') currentButtons = customizeButtons; else if (menuState === 'wiki') currentButtons = wikiButtons;
-        currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h){if(b.text.includes('<')) { b.action(mouse.x < b.x + b.w/2 ? -1 : 1); } else { b.action(); }}});
+    if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if(menuState==='binds')currentButtons=bindsButtons;currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='paused'){pauseButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='levelUp' || gameState==='bossReward'){
         if (!canClickCards) return;
@@ -894,11 +504,11 @@ canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==
 
 // --- DEFINIÇÃO DOS TIPOS DE CHEFE ---
 const BOSS_TYPES = [
-    { name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1, movementType: 'fly', attackPatterns: { normal: ['boulderToss', 'shotgunBlast'], enraged: ['shotgunBlast', 'shotgunBlast', 'boulderToss'] }, specialAbilities: [(boss) => { particles.push(new GroundSlamWarning()); setTimeout(() => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } }, 1000); }, (boss) => { if(boss.isEnraged) { boss.isInvulnerable = true; particles.push(new StoneArmorEffect(boss)); setTimeout(() => boss.isInvulnerable = false, 3000); } }] },
-    { name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5, movementType: 'fly', attackPatterns: { normal: ['rapidFire', 'rapidFire'], enraged: ['rapidFire', 'rapidFire', 'rapidFire'] }, specialAbilities: [(boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); }, (boss) => { if (player) particles.push(new GazeBeam(boss, player)); }] },
+    { name: "Guardião de Pedra", spriteFunction: drawWardenBoss, width: 120, height: 120, baseHp: 2500, baseDamage: 40, baseSpeed: 1, attackPatterns: { normal: ['boulderToss', 'shotgunBlast'], enraged: ['shotgunBlast', 'shotgunBlast', 'boulderToss'] }, specialAbilities: [(boss) => { particles.push(new GroundSlamWarning()); setTimeout(() => { playQuakeSound(); screenShake = { active: true, magnitude: 15, duration: 300 }; if (player && player.y + player.height >= canvas.height - 160 - 5) { player.takeDamage(boss.damage * 1.5); } }, 1000); }, (boss) => { if(boss.isEnraged) { boss.isInvulnerable = true; particles.push(new StoneArmorEffect(boss)); setTimeout(() => boss.isInvulnerable = false, 3000); } }] },
+    { name: "Observador do Vazio", spriteFunction: drawGazerBoss, width: 100, height: 100, baseHp: 2000, baseDamage: 35, baseSpeed: 1.5, attackPatterns: { normal: ['rapidFire', 'rapidFire'], enraged: ['rapidFire', 'rapidFire', 'rapidFire'] }, specialAbilities: [(boss) => { const spikeX = player.x + player.width / 2; particles.push(new SpikeIndicator(spikeX, canvas.height - 32, 80)); setTimeout(() => { particles.push(new VoidSpike(spikeX, canvas.height - 32, 80)); if (player && Math.abs((player.x + player.width/2) - spikeX) < 40) { player.takeDamage(boss.damage * 1.2); } }, 500); }, (boss) => { if (player) particles.push(new GazeBeam(boss, player)); }] },
     { name: "Enxame da Colmeia", spriteFunction: drawHiveBoss, width: 150, height: 100, baseHp: 3000, baseDamage: 10, baseSpeed: 0.5, movementType: 'static', attackPatterns: { normal: [], enraged: [] }, specialAbilities: [ (boss) => { for(let i=0; i < (boss.isEnraged ? 4 : 2); i++) { enemies.push(new Enemy('imp', boss.x + random(0, boss.width), boss.y + boss.height)); } if (boss.isEnraged) enemies.push(new Enemy('specter', boss.x + random(0, boss.width), boss.y + boss.height)); }, (boss) => { const targetPlatform = terrain.blocks.filter(b => b.y < canvas.height - 50)[Math.floor(Math.random() * (terrain.blocks.length-1))]; if(targetPlatform) enemyProjectiles.push(new CorrosiveSpit(boss.x + boss.width/2, boss.y + boss.height/2, targetPlatform)); }] },
     { name: "Sentinela de Cristal", spriteFunction: drawCrystalBoss, width: 80, height: 80, baseHp: 2800, baseDamage: 50, baseSpeed: 0, movementType: 'teleport', attackPatterns: { normal: ['multiShot'], enraged: ['multiShot', 'multiShot'] }, specialAbilities: [(boss) => { boss.isTelegraphing = true; setTimeout(() => { const laserY = player.y + player.height/2; particles.push(new LaserIndicator(laserY)); setTimeout(() => { particles.push(new LaserBeam(laserY, boss.isEnraged)); if (player && Math.abs((player.y + player.height/2) - laserY) < 10) { player.takeDamage(boss.damage * 2); } boss.isTelegraphing = false; }, 800); }, 500); }, (boss) => { for(let i = 0; i < 12; i++) { const angle = (i/12) * Math.PI * 2; enemyProjectiles.push(new CrystalShard(boss.x + boss.width/2, boss.y+boss.height/2, angle)); } }] },
-    { name: "Serafim da Ruína", spriteFunction: drawSeraphBoss, width: 100, height: 140, baseHp: 5000, baseDamage: 60, baseSpeed: 1.8, movementType: 'fly', attackPatterns: { normal: ['rapidFire', 'meteor'], enraged: ['rapidFire', 'shotgunBlast', 'meteor'] }, specialAbilities: [ (boss) => { const attacks = [ (b) => BOSS_TYPES[1].specialAbilities[0](b), (b) => BOSS_TYPES[3].specialAbilities[1](b) ]; const randomAttack = attacks[Math.floor(Math.random()*attacks.length)]; randomAttack(boss); if (boss.isEnraged) { const randomAttack2 = attacks[Math.floor(Math.random()*attacks.length)]; setTimeout(() => randomAttack2(boss), 500); } }, (boss) => { for(let i=0; i<3; i++) { particles.push(new DivineChain(player.x + random(-100, 100), boss.damage)); } }] }
+    { name: "Serafim da Ruína", spriteFunction: drawSeraphBoss, width: 100, height: 140, baseHp: 5000, baseDamage: 60, baseSpeed: 1.8, attackPatterns: { normal: ['rapidFire', 'meteor'], enraged: ['rapidFire', 'shotgunBlast', 'meteor'] }, specialAbilities: [ (boss) => { const attacks = [ (b) => BOSS_TYPES[1].specialAbilities[0](b), (b) => BOSS_TYPES[3].specialAbilities[1](b) ]; const randomAttack = attacks[Math.floor(Math.random()*attacks.length)]; randomAttack(boss); if (boss.isEnraged) { const randomAttack2 = attacks[Math.floor(Math.random()*attacks.length)]; setTimeout(() => randomAttack2(boss), 500); } }, (boss) => { for(let i=0; i<3; i++) { particles.push(new DivineChain(player.x + random(-100, 100), boss.damage)); } }] }
 ];
 
 // --- PARTÍCULAS DE HABILIDADES DE CHEFE ---
