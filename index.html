@@ -93,7 +93,7 @@ canvas.width = 1280; canvas.height = 720;
 ctx.imageSmoothingEnabled = false;
 
 // --- GAME STATE & CONSTANTS ---
-const GAME_VERSION = "1.0.2";
+const GAME_VERSION = "1.0.3";
 const FONT_PRIMARY = '"Press Start 2P"';
 const GRAVITY = 0.7;
 let gameState = 'intro';
@@ -110,6 +110,8 @@ let canClickCards = true;
 
 let player, terrain;
 let wikiTab = 'upgrades';
+let wikiPage = 0;
+let wikiMaxPages = 1;
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
 let backgroundParticles = [], backgroundSpaceships = [];
 let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
@@ -137,14 +139,61 @@ function drawWikiMenu() {
     ctx.font = `40px ${FONT_PRIMARY}`;
     ctx.fillText("Game Wiki", canvas.width / 2, 100);
 
+    // Desenha os botões das abas
     wikiButtons.forEach(btn => {
+        if (btn.text === '<' || btn.text === '>' || btn.text === 'Back') return;
         let originalText = btn.text;
-        if (btn.type === wikiTab) {
-            btn.text = `> ${originalText} <`;
-        }
+        if (btn.type === wikiTab) btn.text = `> ${originalText} <`;
         drawButton(btn);
-        btn.text = originalText; // Restaura o texto original para a próxima verificação
+        btn.text = originalText;
     });
+
+    ctx.textAlign = 'left';
+    ctx.font = `14px ${FONT_PRIMARY}`;
+    ctx.fillStyle = 'white';
+
+    const itemsPerPage = 6;
+    let itemsToDisplay = [];
+    
+    if (wikiTab === 'upgrades') itemsToDisplay = UPGRADES;
+    else if (wikiTab === 'pacts') itemsToDisplay = PACTS;
+    else if (wikiTab === 'cosmetics') itemsToDisplay = HATS.concat(OUTFITS, COLORS);
+
+    wikiMaxPages = Math.ceil(itemsToDisplay.length / itemsPerPage);
+    const startIndex = wikiPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const pageItems = itemsToDisplay.slice(startIndex, endIndex);
+
+    let yPos = 220;
+    pageItems.forEach(item => {
+        ctx.fillStyle = item.r === 'pact' ? '#FF8A80' : RARITY_COLORS[item.r] || 'white';
+        ctx.fillText(`- ${item.n} ${item.r ? `(${RARITY_MAP[item.r]})` : ''}`, 150, yPos);
+        ctx.fillStyle = 'white';
+        ctx.fillText(item.d, 170, yPos + 20);
+        
+        if (item.unlock) {
+            ctx.fillStyle = '#AAAAAA';
+            ctx.font = '10px "Press Start 2P"';
+            ctx.fillText(`Desbloqueia: ${item.unlock}`, 170, yPos + 35);
+            ctx.font = `14px ${FONT_PRIMARY}`;
+        }
+        
+        yPos += 60;
+    });
+
+    // Controles de página
+    if (wikiMaxPages > 1) {
+        drawButton(wikiButtons.find(b => b.text === '<'));
+        drawButton(wikiButtons.find(b => b.text === '>'));
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'white';
+        ctx.font = `16px ${FONT_PRIMARY}`;
+        ctx.fillText(`Página ${wikiPage + 1} / ${wikiMaxPages}`, canvas.width / 2, canvas.height - 70);
+    }
+    
+    // Botão Voltar
+    drawButton(wikiButtons.find(b => b.text === 'Back'));
+});
 
     // Conteúdo da Wiki (simplificado por enquanto)
     ctx.textAlign = 'left';
@@ -412,25 +461,21 @@ function showPatchNotes() {
     const patchNotesContent = document.getElementById('patch-notes-content');
     patchNotesContent.innerHTML = `
         <h1>Patch Notes - V${GAME_VERSION}</h1>
-        <h2>Novas Funcionalidades Épicas!</h2>
+        <h2>Melhorias de Interface</h2>
         <ul>
-            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos para tornar cada batalha uma experiência única.</li>
-            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado! Personalize seu personagem com chapéus, roupas e cores.</li>
-            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear cosméticos temáticos e exibir suas conquistas!</li>
-            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
+            <li><b>Wiki Paginada:</b> A Wiki agora é organizada em páginas para uma navegação mais limpa e fácil. Chega de rolagem infinita!</li>
+            <li>Adicionados botões de navegação na Wiki para passar e voltar páginas.</li>
         </ul>
-        <h2>Melhorias e Mudanças</h2>
+        <h2>Balanceamento & Polimento</h2>
         <ul>
-            <li>Inimigos ficam mais fortes (HP, dano e velocidade) a cada chefe derrotado.</li>
-            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
-            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de recompensa para evitar escolhas acidentais.</li>
-            <li>O aviso visual do ataque de chão do primeiro chefe agora pisca em vermelho ANTES do dano, permitindo reação.</li>
+            <li>O "Tiro Amplo" agora é um ataque exclusivo do primeiro chefe (Guardião de Pedra).</li>
+            <li>Chefes subsequentes agora têm ataques básicos únicos que se encaixam melhor em seus temas.</li>
+            <li>Adicionadas novas habilidades especiais e mais desafiadoras para TODOS os cinco chefes. Prepare-se!</li>
         </ul>
         <h2>Correções de Bugs</h2>
         <ul>
-            <li>Corrigido um bug crítico que impedia o jogo de carregar devido a uma função não definida.</li>
-            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
-            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
+            <li>Corrigido o bug que impedia os menus 'Customize' e 'Wiki' de abrirem.</li>
+            <li>Ajustado o ataque de chão do Guardião de Pedra para que o aviso visual (chão piscando) ocorra ANTES do dano.</li>
         </ul>
         <button class="close-button" id="close-patch-notes">Let's Go!</button>
     `;
@@ -693,8 +738,14 @@ function setupMenus(){
         {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { let colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); do { currentIndex = (currentIndex + dir + colors.length) % colors.length; } while (!gameData.customization.unlockedColors.includes(colors[currentIndex])); gameData.customization.color = colors[currentIndex];}},
         {x: canvas.width/2 - 100, y: 600, w: 200, h: 50, text: 'Save & Back', action: () => { saveGameData(); menuState = 'main'; playClickSound(); }}
     ];
-     wikiButtons = [ {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; wikiScrollY=0; playClickSound(); }} ];
-}
+     wikiButtons = [
+    {x: 150, y: 150, w: 200, h: 40, text: 'Upgrades', type:'upgrades', action: () => { wikiTab = 'upgrades'; wikiPage = 0; playClickSound(); }},
+    {x: 360, y: 150, w: 200, h: 40, text: 'Pacts', type:'pacts', action: () => { wikiTab = 'pacts'; wikiPage = 0; playClickSound(); }},
+    {x: 570, y: 150, w: 200, h: 40, text: 'Cosmetics', type:'cosmetics', action: () => { wikiTab = 'cosmetics'; wikiPage = 0; playClickSound(); }},
+    {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; playClickSound(); }},
+    {x: 150, y: canvas.height - 100, w: 50, h: 50, text: '<', action: () => { if(wikiPage > 0) { wikiPage--; playClickSound(); } }},
+    {x: canvas.width - 200, y: canvas.height - 100, w: 50, h: 50, text: '>', action: () => { if(wikiPage < wikiMaxPages - 1) { wikiPage++; playClickSound(); } }}
+];}
 function drawMenu(){
     ctx.drawImage(skyCanvas,0,0);
     if(!gameData.settings.performanceMode){backgroundSpaceships.forEach(s=>s.draw());backgroundParticles.forEach(p=>p.draw());}
