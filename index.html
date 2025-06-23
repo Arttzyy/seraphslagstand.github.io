@@ -96,39 +96,6 @@ function showPatchNotes() {
         `;
     }
 }
-// --- CONFIGURE O LEADERBOARD ONLINE AQUI ---
-const BIN_ID = '6856e1208960c979a5ae7fc0';
-const MASTER_KEY = '$2a$10$DV4IgDP2CqaZwMNlpBTjtObr2YOOtI4xX0paGor6LcqKOthq5Db22';
-
-// --- GAME SETUP ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-canvas.width = 1280; canvas.height = 720;
-ctx.imageSmoothingEnabled = false;
-
-// --- GAME STATE & CONSTANTS ---
-const GAME_VERSION = "1.0";
-const FONT_PRIMARY = '"Press Start 2P"';
-const GRAVITY = 0.7;
-let gameState = 'intro';
-let menuState = 'main';
-let gameTime = 0, score = 0, levelColorIndex = 0, bossesDefeatedCount = 0;
-let restartTimer = 0;
-let gameDifficulty = 'medium';
-let bossIsActive = false;
-let playerNickname = null;
-let leaderboardData = [];
-let difficultyIsCapped = false;
-let cappedDifficultyValue = 1;
-let canClickCards = true;
-
-let player, terrain;
-let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
-let backgroundParticles = [], backgroundSpaceships = [];
-let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
-let screenShake = { active: false, magnitude: 0, duration: 0 };
-let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
-let hasUserInteracted = false;
 
 // --- DADOS DE CUSTOMIZAÇÃO E DESBLOQUEIOS ---
 
@@ -326,6 +293,40 @@ function unlockCosmetics(bossIndex) {
     }
     saveGameData();
 }
+
+// --- CONFIGURE O LEADERBOARD ONLINE AQUI ---
+const BIN_ID = '6856e1208960c979a5ae7fc0';
+const MASTER_KEY = '$2a$10$DV4IgDP2CqaZwMNlpBTjtObr2YOOtI4xX0paGor6LcqKOthq5Db22';
+
+// --- GAME SETUP ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 1280; canvas.height = 720;
+ctx.imageSmoothingEnabled = false;
+
+// --- GAME STATE & CONSTANTS ---
+const GAME_VERSION = "1.0";
+const FONT_PRIMARY = '"Press Start 2P"';
+const GRAVITY = 0.7;
+let gameState = 'intro';
+let menuState = 'main';
+let gameTime = 0, score = 0, levelColorIndex = 0, bossesDefeatedCount = 0;
+let restartTimer = 0;
+let gameDifficulty = 'medium';
+let bossIsActive = false;
+let playerNickname = null;
+let leaderboardData = [];
+let difficultyIsCapped = false;
+let cappedDifficultyValue = 1;
+let canClickCards = true;
+
+let player, terrain;
+let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
+let backgroundParticles = [], backgroundSpaceships = [];
+let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
+let screenShake = { active: false, magnitude: 0, duration: 0 };
+let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
+let hasUserInteracted = false;
 
 // --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
