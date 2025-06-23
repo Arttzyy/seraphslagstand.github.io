@@ -79,6 +79,23 @@
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
+
+function showPatchNotes() {
+    const patchNotesContainer = document.getElementById('patch-notes-container');
+    if (patchNotesContainer) {
+        patchNotesContainer.classList.remove('hidden');
+        patchNotesContainer.querySelector('#patch-notes-content').innerHTML = `
+            <h1>Patch Notes v1.0</h1>
+            <ul>
+                <li>Bem-vindo ao Seraph's Lag Stand!</li>
+                <li>Nova interface com sistema de upgrades.</li>
+                <li>Suporte a Leaderboard online.</li>
+                <li>Pressione <strong>ESPACO</strong> para pular e <strong>mouse</strong> para atirar.</li>
+            </ul>
+            <button class="close-button" onclick="document.getElementById('patch-notes-container').classList.add('hidden')">Fechar</button>
+        `;
+    }
+}
 // --- CONFIGURE O LEADERBOARD ONLINE AQUI ---
 const BIN_ID = '6856e1208960c979a5ae7fc0';
 const MASTER_KEY = '$2a$10$DV4IgDP2CqaZwMNlpBTjtObr2YOOtI4xX0paGor6LcqKOthq5Db22';
@@ -112,23 +129,6 @@ let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
 let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
-function showPatchNotes() {
-    const patchNotesContainer = document.getElementById('patch-notes-container');
-    if (patchNotesContainer) {
-        patchNotesContainer.classList.remove('hidden');
-        patchNotesContainer.querySelector('#patch-notes-content').innerHTML = `
-            <h1>Patch Notes v1.0</h1>
-            <ul>
-                <li>Bem-vindo ao Seraph's Lag Stand!</li>
-                <li>Nova interface com sistema de upgrades.</li>
-                <li>Suporte a Leaderboard online.</li>
-                <li>Pressione <strong>ESPACO</strong> para pular e <strong>mouse</strong> para atirar.</li>
-            </ul>
-            <button class="close-button" onclick="document.getElementById('patch-notes-container').classList.add('hidden')">Fechar</button>
-        `;
-    }
-}
-
 
 // --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
