@@ -139,7 +139,6 @@ function drawWikiMenu() {
     ctx.font = `40px ${FONT_PRIMARY}`;
     ctx.fillText("Game Wiki", canvas.width / 2, 100);
 
-    // Desenha os botões das abas
     wikiButtons.forEach(btn => {
         if (btn.text === '<' || btn.text === '>' || btn.text === 'Back') return;
         let originalText = btn.text;
@@ -154,7 +153,7 @@ function drawWikiMenu() {
 
     const itemsPerPage = 6;
     let itemsToDisplay = [];
-    
+
     if (wikiTab === 'upgrades') itemsToDisplay = UPGRADES;
     else if (wikiTab === 'pacts') itemsToDisplay = PACTS;
     else if (wikiTab === 'cosmetics') itemsToDisplay = HATS.concat(OUTFITS, COLORS);
@@ -170,14 +169,14 @@ function drawWikiMenu() {
         ctx.fillText(`- ${item.n} ${item.r ? `(${RARITY_MAP[item.r]})` : ''}`, 150, yPos);
         ctx.fillStyle = 'white';
         ctx.fillText(item.d, 170, yPos + 20);
-        
+
         if (item.unlock) {
             ctx.fillStyle = '#AAAAAA';
             ctx.font = '10px "Press Start 2P"';
             ctx.fillText(`Desbloqueia: ${item.unlock}`, 170, yPos + 35);
             ctx.font = `14px ${FONT_PRIMARY}`;
         }
-        
+
         yPos += 60;
     });
 
@@ -190,10 +189,11 @@ function drawWikiMenu() {
         ctx.font = `16px ${FONT_PRIMARY}`;
         ctx.fillText(`Página ${wikiPage + 1} / ${wikiMaxPages}`, canvas.width / 2, canvas.height - 70);
     }
-    
+
     // Botão Voltar
     drawButton(wikiButtons.find(b => b.text === 'Back'));
 }
+
 
     // Conteúdo da Wiki (simplificado por enquanto)
     ctx.textAlign = 'left';
