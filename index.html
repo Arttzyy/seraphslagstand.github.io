@@ -109,6 +109,7 @@ let cappedDifficultyValue = 1;
 let canClickCards = true;
 
 let player, terrain;
+let wikiTab = 'upgrades';
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
 let backgroundParticles = [], backgroundSpaceships = [];
 let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
@@ -726,7 +727,7 @@ function drawMenu(){
     } else if(menuState === 'wiki'){
         drawWikiMenu();
     }
-    else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings & Binds",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F,G,J - Active Abilities","ESC - Pause Game", "LPLP - God Mode", "LPLPLP - Summon Boss"];ctx.textAlign = 'left';binds.forEach((b,i)=>{ctx.fillText(b,100,250+i*30);});}
+    else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings & Binds",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F,G,J - Active Abilities","ESC - Pause Game", "Ctrl + Mouse Scroll - Zoom/Zoom out", ""];ctx.textAlign = 'left';binds.forEach((b,i)=>{ctx.fillText(b,100,250+i*30);});}
 }
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
 function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
