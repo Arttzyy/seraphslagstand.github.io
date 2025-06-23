@@ -93,7 +93,7 @@ canvas.width = 1280; canvas.height = 720;
 ctx.imageSmoothingEnabled = false;
 
 // --- GAME STATE & CONSTANTS ---
-const GAME_VERSION = "1.0.3";
+const GAME_VERSION = "1.0.2";
 const FONT_PRIMARY = '"Press Start 2P"';
 const GRAVITY = 0.7;
 let gameState = 'intro';
@@ -116,165 +116,82 @@ let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
 let wikiScrollY = 0;
-let wikiTab = 'upgrades'; // 'upgrades', 'pacts', 'cosmetics'
 
+// --- NOVAS FUNÇÕES DE MENU ---
 
-// --- QUICK TIME EVENT (QTE) STATE ---
-let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
+function drawCustomizeMenu() {
+    ctx.fillStyle = currentTheme.highlight;
+    ctx.font = `40px ${FONT_PRIMARY}`;
+    ctx.fillText("Customize", canvas.width / 2, 150);
 
-// --- CHEAT CODE & GOD MODE ---
-let keySequence = [];
-let isGodModeActive = false;
+    // Prévia do jogador
+    drawPlayerSprite({ x: canvas.width / 2 - 64, y: 300, width: 64, height: 96, invincibilityTimer: 0 }, currentTheme);
 
-// --- INPUT HANDLERS (DEFINIÇÃO GLOBAL ÚNICA) ---
-const keys = { a:{p:false}, d:{p:false}, w:{p:false}, s:{p:false}, space:{p:false}, f:{p:false}, g:{p:false}, j:{p:false}, l:{p:false}, p:{p:false} };
-const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
-
-// --- LEADERBOARD (ONLINE - JSONBin.io) ---
-async function fetchLeaderboard() { try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); if (!response.ok) throw new Error('Failed to fetch leaderboard'); const data = await response.json(); leaderboardData = data.record.scores || []; } catch (error) { console.error("Leaderboard Error:", error); leaderboardData = []; } }
-async function submitScore(nickname, score) { if (!nickname || typeof score !== 'number' || score === 0) return; let currentScores = []; try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); const data = await response.json(); currentScores = data.record.scores || []; } catch (error) { console.error("Could not fetch scores to submit new one:", error); currentScores = []; } const existingEntry = currentScores.find(entry => entry.nickname === nickname); if (existingEntry && score <= existingEntry.score) { await fetchLeaderboard(); return; } const otherPlayerScores = currentScores.filter(entry => entry.nickname !== nickname); otherPlayerScores.push({ nickname: nickname, score: score }); otherPlayerScores.sort((a, b) => b.score - a.score); const newLeaderboard = otherPlayerScores.slice(0, 10); try { await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY }, body: JSON.stringify({ scores: newLeaderboard }) }); leaderboardData = newLeaderboard; } catch (error) { console.error("Could not submit new score:", error); } }
-
-// --- PATCH NOTES ---
-function showPatchNotes() {
-    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-    if (lastSeenVersion === GAME_VERSION) return;
-
-    const patchNotesContainer = document.getElementById('patch-notes-container');
-    const patchNotesContent = document.getElementById('patch-notes-content');
-    patchNotesContent.innerHTML = `
-        <h1>Patch Notes - V${GAME_VERSION}</h1>
-        <h2>Novas Funcionalidades Épicas!</h2>
-        <ul>
-            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos para tornar cada batalha uma experiência única.</li>
-            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado! Personalize seu personagem com chapéus, roupas e cores.</li>
-            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear cosméticos temáticos e exibir suas conquistas!</li>
-            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
-        </ul>
-        <h2>Melhorias e Mudanças</h2>
-        <ul>
-            <li>Inimigos ficam mais fortes (HP, dano e velocidade) a cada chefe derrotado.</li>
-            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
-            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de recompensa para evitar escolhas acidentais.</li>
-            <li>O aviso visual do ataque de chão do primeiro chefe agora pisca em vermelho ANTES do dano, permitindo reação.</li>
-        </ul>
-        <h2>Correções de Bugs</h2>
-        <ul>
-            <li>Corrigido um bug crítico que impedia o jogo de carregar devido a uma função não definida.</li>
-            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
-            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
-        </ul>
-        <button class="close-button" id="close-patch-notes">Let's Go!</button>
-    `;
-    patchNotesContainer.classList.remove('hidden');
-    document.getElementById('close-patch-notes').addEventListener('click', () => {
-        patchNotesContainer.classList.add('hidden');
-        localStorage.setItem('lastSeenVersion', GAME_VERSION);
-    });
+    // Botões
+    customizeButtons.forEach(btn => drawButton(btn));
 }
 
-// --- NICKNAME & INTRO LOGIC ---
-const nicknameContainer = document.getElementById('nickname-container'); const nicknameInput = document.getElementById('nickname-input'); const nicknameButton = document.getElementById('nickname-button');
-function initializeNickname() { const savedNickname = localStorage.getItem('playerNickname'); if (savedNickname) { playerNickname = savedNickname; nicknameContainer.classList.add('hidden'); gameState = 'menu'; hasUserInteracted = true; initAudio(); if (isMusicReady && ytPlayer && ytPlayer.getPlayerState() !== 1) { ytPlayer.playVideo(); } showPatchNotes(); } else { gameState = 'intro'; } }
-nicknameButton.addEventListener('click', () => { let name = nicknameInput.value.trim().toUpperCase(); if (name.length > 0 && name.length <= 12) { playerNickname = name; localStorage.setItem('playerNickname', playerNickname); nicknameContainer.classList.add('hidden'); gameState = 'menu'; hasUserInteracted = true; initAudio(); if (isMusicReady && ytPlayer && ytPlayer.getPlayerState() !== 1) { ytPlayer.playVideo(); } showPatchNotes(); } else { nicknameInput.style.borderColor = 'red'; setTimeout(() => { nicknameInput.style.borderColor = '#999'; }, 1000); } });
+function drawWikiMenu() {
+    ctx.fillStyle = currentTheme.highlight;
+    ctx.font = `40px ${FONT_PRIMARY}`;
+    ctx.fillText("Game Wiki", canvas.width / 2, 100);
 
-// --- YOUTUBE API & AUDIO ---
-let lastEnemyHitSoundTime = 0;
-function onYouTubeIframeAPIReady() {ytPlayer = new YT.Player('yt-player-container', {height: '1', width: '1', playerVars: {'playsinline': 1, 'listType': 'playlist', 'list': 'PLdsGes2mFh92eHpOZVJQgoubb6rF0CcvU', 'loop': 1 }, events: {'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange}});}
-function onPlayerReady(event) {isMusicReady = true; event.target.setShuffle(true); event.target.setVolume(gameData.settings.volume); if (hasUserInteracted) {event.target.playVideo();}}
-function onPlayerStateChange(event) {if (event.data === YT.PlayerState.ENDED) {ytPlayer.playVideo();}}
-function initAudio() {if (!audioCtx) {audioCtx = new (window.AudioContext || window.webkitAudioContext)();} if (audioCtx.state === 'suspended') {audioCtx.resume();} if (isMusicReady && ytPlayer) {ytPlayer.setVolume(gameData.settings.volume);}}
-function playClickSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(800, audioCtx.currentTime); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1);}
-function playDefeatSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(400, audioCtx.currentTime); g.gain.setValueAtTime(0.2, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 1.2);}
-function playPowerUpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(300, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.2);}
-function playEnemyHitSound() { if (!audioCtx || Date.now() - lastEnemyHitSoundTime < 50) return; lastEnemyHitSoundTime = Date.now(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; g.gain.setValueAtTime(0.08, audioCtx.currentTime); o.frequency.setValueAtTime(300, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1); }
-function playKillSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15);}
-function playDamageSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15); }
-function playJumpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(440, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1); }
-function playLevelUpSound() { if (!audioCtx) return; const notes = [523, 659, 783, 1046]; notes.forEach((note, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(note, audioCtx.currentTime + i * 0.07); g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.07); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + i * 0.07 + 0.1); o.start(audioCtx.currentTime + i * 0.07); o.stop(audioCtx.currentTime + i * 0.07 + 0.1); }); }
-function playBossSpawnSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(120, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 1.5); g.gain.setValueAtTime(0.25, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 1.5); }
-function playQuakeSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.3); }
+    wikiButtons.forEach(btn => {
+        let originalText = btn.text;
+        if (btn.type === wikiTab) {
+            btn.text = `> ${originalText} <`;
+        }
+        drawButton(btn);
+        btn.text = originalText; // Restaura o texto original para a próxima verificação
+    });
 
-const THEMES=[{bg:'#212121',platform:'#424242',platformTop:'#6E6E6E',detail:'#313131',text:'#ECEFF1',highlight:'#FBC02D',enemy:'#B71C1C',projectile:'#FDD835',hp:'#D32F2F',xp:'#1976D2',shadow:'#000000'},{bg:'#263238',platform:'#455A64',platformTop:'#607D8B',detail:'#37474F',text:'#ECEFF1',highlight:'#FFCA28',enemy:'#D84315',projectile:'#FFEE58',hp:'#F44336',xp:'#42A5F5',shadow:'#000000'},{bg:'#3E2723',platform:'#5D4037',platformTop:'#795548',detail:'#4E342E',text:'#D7CCC8',highlight:'#FFC107',enemy:'#E64A19',projectile:'#FFEB3B',hp:'#E53935',xp:'#039BE5',shadow:'#1B0000'},{bg:'#1A237E',platform:'#283593',platformTop:'#3949AB',detail:'#1A237E',text:'#E8EAF6',highlight:'#F57F17',enemy:'#C62828',projectile:'#AED581',hp:'#C62828',xp:'#64B5F6',shadow:'#000A2C'},{bg:'#004D40',platform:'#00695C',platformTop:'#00897B',detail:'#003D33',text:'#E0F2F1',highlight:'#F9A825',enemy:'#AD1457',projectile:'#FF8A65',hp:'#D81B60',xp:'#29B6F6',shadow:'#001A15'}];
-let currentTheme = THEMES[0];
-let gameData = { settings: { performanceMode: false, volume: 25 }, customization: { outfit: 0, hat: 0, color: '#FFFFFF', unlockedOutfits: [0], unlockedHats: [0], unlockedColors: ['#FFFFFF'] } };
-function loadGameData() { const d=localStorage.getItem('seraphsLagStandData'); if(d){const loadedData=JSON.parse(d); gameData.settings=Object.assign(gameData.settings, loadedData.settings); gameData.customization = Object.assign(gameData.customization, loadedData.customization);}}
-function saveGameData() { localStorage.setItem('seraphsLagStandData', JSON.stringify(gameData));}
+    // Conteúdo da Wiki (simplificado por enquanto)
+    ctx.textAlign = 'left';
+    ctx.font = `14px ${FONT_PRIMARY}`;
+    ctx.fillStyle = 'white';
+
+    let yPos = 220;
+    if (wikiTab === 'upgrades') {
+        UPGRADES.forEach(item => {
+            ctx.fillStyle = 'yellow';
+            ctx.fillText(`- ${item.n} (${RARITY_MAP[item.r]})`, 150, yPos);
+            ctx.fillStyle = 'white';
+            ctx.fillText(item.d, 170, yPos + 20);
+            yPos += 50;
+        });
+    } else if (wikiTab === 'pacts') {
+         PACTS.forEach(item => {
+            ctx.fillStyle = 'red';
+            ctx.fillText(`- ${item.n}`, 150, yPos);
+            ctx.fillStyle = 'white';
+            ctx.fillText(item.d, 170, yPos + 20);
+            yPos += 50;
+        });
+    } else if (wikiTab === 'cosmetics') {
+        yPos = 220;
+        ctx.fillStyle = '#64B5F6';
+        ctx.fillText("Hats:", 150, yPos);
+        yPos += 30;
+        HATS.forEach((item, index) => {
+             ctx.fillStyle = gameData.customization.unlockedHats.includes(index) ? 'white' : '#777';
+             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
+             yPos += 25;
+        });
+
+        yPos += 30;
+        ctx.fillStyle = '#64B5F6';
+        ctx.fillText("Outfits:", 150, yPos);
+        yPos += 30;
+         OUTFITS.forEach((item, index) => {
+             ctx.fillStyle = gameData.customization.unlockedOutfits.includes(index) ? 'white' : '#777';
+             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
+             yPos += 25;
+        });
+    }
+}
 
 // --- DADOS DE CUSTOMIZAÇÃO E DESBLOQUEIOS ---
-const HATS = [
-    { 
-        name: 'Chapéu de Mago', 
-        unlock: 'Default', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#42A5F5';
-            ctx.beginPath();
-            ctx.moveTo(x + w / 2, y);
-            ctx.lineTo(x, y + 22);
-            ctx.lineTo(x + w, y + 22);
-            ctx.closePath();
-            ctx.fill();
-        }
-    },
-    { 
-        name: 'Elmo de Pedra', 
-        unlock: 'Guardião de Pedra', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#A1887F';
-            ctx.fillRect(x, y - 5, w, 10);
-            ctx.fillRect(x + 5, y - 10, w - 10, 5);
-        }
-    },
-    { 
-        name: 'Coroa do Vazio', 
-        unlock: 'Observador do Vazio', 
-        draw: (x, y, w, h) => {
-            const angle = Date.now() / 300;
-            ctx.beginPath();
-            ctx.arc(x + w/2, y + 10, 10, angle, angle + Math.PI);
-            ctx.strokeStyle = '#D500F9';
-            ctx.lineWidth = 3;
-            ctx.stroke();
-        }
-    },
-    { 
-        name: 'Antenas de Inseto', 
-        unlock: 'Enxame da Colmeia', 
-        draw: (x, y, w, h) => {
-            ctx.strokeStyle = '#6D4C41';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x + w/2 - 5, y + 10);
-            ctx.lineTo(x, y - 5);
-            ctx.moveTo(x + w/2 + 5, y + 10);
-            ctx.lineTo(x + w, y - 5);
-            ctx.stroke();
-        }
-    },
-     { 
-        name: 'Chifre de Cristal', 
-        unlock: 'Sentinela de Cristal', 
-        draw: (x, y, w, h) => {
-            ctx.fillStyle = '#F06292';
-            ctx.beginPath();
-            ctx.moveTo(x + w/2, y - 10);
-            ctx.lineTo(x + w/2 - 10, y + 15);
-            ctx.lineTo(x + w/2 + 10, y + 15);
-            ctx.closePath();
-            ctx.fill();
-        }
-    },
-    { 
-        name: 'Auréola do Serafim', 
-        unlock: 'Serafim da Ruína', 
-        draw: (x, y, w, h) => {
-            ctx.strokeStyle = '#FFD600';
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            ctx.ellipse(x + w / 2, y + 5, 20, 5, 0, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    },
-];
+
 const OUTFITS = [
     { 
         name: 'Visor Padrão', 
@@ -357,6 +274,82 @@ const OUTFITS = [
         }
     },
 ];
+
+const HATS = [
+    { 
+        name: 'Chapéu Padrão', 
+        unlock: 'Default', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#42A5F5';
+            ctx.beginPath();
+            ctx.moveTo(x + w / 2, y);
+            ctx.lineTo(x, y + 22);
+            ctx.lineTo(x + w, y + 22);
+            ctx.closePath();
+            ctx.fill();
+        }
+    },
+    { 
+        name: 'Elmo de Pedra', 
+        unlock: 'Guardião de Pedra', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#A1887F';
+            ctx.fillRect(x, y - 5, w, 10);
+            ctx.fillRect(x + 5, y - 10, w - 10, 5);
+        }
+    },
+    { 
+        name: 'Coroa do Vazio', 
+        unlock: 'Observador do Vazio', 
+        draw: (x, y, w, h) => {
+            const angle = Date.now() / 300;
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + 10, 10, angle, angle + Math.PI);
+            ctx.strokeStyle = '#D500F9';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    },
+    { 
+        name: 'Antenas de Inseto', 
+        unlock: 'Enxame da Colmeia', 
+        draw: (x, y, w, h) => {
+            ctx.strokeStyle = '#6D4C41';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + w/2 - 5, y + 10);
+            ctx.lineTo(x, y - 5);
+            ctx.moveTo(x + w/2 + 5, y + 10);
+            ctx.lineTo(x + w, y - 5);
+            ctx.stroke();
+        }
+    },
+     { 
+        name: 'Chifre de Cristal', 
+        unlock: 'Sentinela de Cristal', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#F06292';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y - 10);
+            ctx.lineTo(x + w/2 - 10, y + 15);
+            ctx.lineTo(x + w/2 + 10, y + 15);
+            ctx.closePath();
+            ctx.fill();
+        }
+    },
+    { 
+        name: 'Auréola do Serafim', 
+        unlock: 'Serafim da Ruína', 
+        draw: (x, y, w, h) => {
+            ctx.strokeStyle = '#FFD600';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.ellipse(x + w / 2, y + 5, 20, 5, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    },
+];
+
 const COLORS = [
     { name: 'Padrão', hex: '#FFFFFF', unlock: 'Default' },
     { name: 'Pedra', hex: '#BCAAA4', unlock: 'Guardião de Pedra' },
@@ -393,6 +386,87 @@ function unlockCosmetics(bossIndex) {
     }
     saveGameData();
 }
+
+// --- QUICK TIME EVENT (QTE) STATE ---
+let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
+
+// --- CHEAT CODE & GOD MODE ---
+let keySequence = [];
+let isGodModeActive = false;
+
+// --- INPUT HANDLERS (DEFINIÇÃO GLOBAL ÚNICA) ---
+const keys = { a:{p:false}, d:{p:false}, w:{p:false}, s:{p:false}, space:{p:false}, f:{p:false}, g:{p:false}, j:{p:false}, l:{p:false}, p:{p:false} };
+const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
+
+// --- LEADERBOARD (ONLINE - JSONBin.io) ---
+async function fetchLeaderboard() { try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); if (!response.ok) throw new Error('Failed to fetch leaderboard'); const data = await response.json(); leaderboardData = data.record.scores || []; } catch (error) { console.error("Leaderboard Error:", error); leaderboardData = []; } }
+async function submitScore(nickname, score) { if (!nickname || typeof score !== 'number' || score === 0) return; let currentScores = []; try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); const data = await response.json(); currentScores = data.record.scores || []; } catch (error) { console.error("Could not fetch scores to submit new one:", error); currentScores = []; } const existingEntry = currentScores.find(entry => entry.nickname === nickname); if (existingEntry && score <= existingEntry.score) { await fetchLeaderboard(); return; } const otherPlayerScores = currentScores.filter(entry => entry.nickname !== nickname); otherPlayerScores.push({ nickname: nickname, score: score }); otherPlayerScores.sort((a, b) => b.score - a.score); const newLeaderboard = otherPlayerScores.slice(0, 10); try { await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY }, body: JSON.stringify({ scores: newLeaderboard }) }); leaderboardData = newLeaderboard; } catch (error) { console.error("Could not submit new score:", error); } }
+
+// --- PATCH NOTES ---
+function showPatchNotes() {
+    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+    if (lastSeenVersion === GAME_VERSION) return;
+
+    const patchNotesContainer = document.getElementById('patch-notes-container');
+    const patchNotesContent = document.getElementById('patch-notes-content');
+    patchNotesContent.innerHTML = `
+        <h1>Patch Notes - V${GAME_VERSION}</h1>
+        <h2>Novas Funcionalidades Épicas!</h2>
+        <ul>
+            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos para tornar cada batalha uma experiência única.</li>
+            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado! Personalize seu personagem com chapéus, roupas e cores.</li>
+            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear cosméticos temáticos e exibir suas conquistas!</li>
+            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
+        </ul>
+        <h2>Melhorias e Mudanças</h2>
+        <ul>
+            <li>Inimigos ficam mais fortes (HP, dano e velocidade) a cada chefe derrotado.</li>
+            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
+            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de recompensa para evitar escolhas acidentais.</li>
+            <li>O aviso visual do ataque de chão do primeiro chefe agora pisca em vermelho ANTES do dano, permitindo reação.</li>
+        </ul>
+        <h2>Correções de Bugs</h2>
+        <ul>
+            <li>Corrigido um bug crítico que impedia o jogo de carregar devido a uma função não definida.</li>
+            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
+            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
+        </ul>
+        <button class="close-button" id="close-patch-notes">Let's Go!</button>
+    `;
+    patchNotesContainer.classList.remove('hidden');
+    document.getElementById('close-patch-notes').addEventListener('click', () => {
+        patchNotesContainer.classList.add('hidden');
+        localStorage.setItem('lastSeenVersion', GAME_VERSION);
+    });
+}
+
+// --- NICKNAME & INTRO LOGIC ---
+const nicknameContainer = document.getElementById('nickname-container'); const nicknameInput = document.getElementById('nickname-input'); const nicknameButton = document.getElementById('nickname-button');
+function initializeNickname() { const savedNickname = localStorage.getItem('playerNickname'); if (savedNickname) { playerNickname = savedNickname; nicknameContainer.classList.add('hidden'); gameState = 'menu'; hasUserInteracted = true; initAudio(); if (isMusicReady && ytPlayer && ytPlayer.getPlayerState() !== 1) { ytPlayer.playVideo(); } showPatchNotes(); } else { gameState = 'intro'; } }
+nicknameButton.addEventListener('click', () => { let name = nicknameInput.value.trim().toUpperCase(); if (name.length > 0 && name.length <= 12) { playerNickname = name; localStorage.setItem('playerNickname', playerNickname); nicknameContainer.classList.add('hidden'); gameState = 'menu'; hasUserInteracted = true; initAudio(); if (isMusicReady && ytPlayer && ytPlayer.getPlayerState() !== 1) { ytPlayer.playVideo(); } showPatchNotes(); } else { nicknameInput.style.borderColor = 'red'; setTimeout(() => { nicknameInput.style.borderColor = '#999'; }, 1000); } });
+
+// --- YOUTUBE API & AUDIO ---
+let lastEnemyHitSoundTime = 0;
+function onYouTubeIframeAPIReady() {ytPlayer = new YT.Player('yt-player-container', {height: '1', width: '1', playerVars: {'playsinline': 1, 'listType': 'playlist', 'list': 'PLdsGes2mFh92eHpOZVJQgoubb6rF0CcvU', 'loop': 1 }, events: {'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange}});}
+function onPlayerReady(event) {isMusicReady = true; event.target.setShuffle(true); event.target.setVolume(gameData.settings.volume); if (hasUserInteracted) {event.target.playVideo();}}
+function onPlayerStateChange(event) {if (event.data === YT.PlayerState.ENDED) {ytPlayer.playVideo();}}
+function initAudio() {if (!audioCtx) {audioCtx = new (window.AudioContext || window.webkitAudioContext)();} if (audioCtx.state === 'suspended') {audioCtx.resume();} if (isMusicReady && ytPlayer) {ytPlayer.setVolume(gameData.settings.volume);}}
+function playClickSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(800, audioCtx.currentTime); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1);}
+function playDefeatSound() {if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(400, audioCtx.currentTime); g.gain.setValueAtTime(0.2, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 1.2);}
+function playPowerUpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(300, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.2); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.2);}
+function playEnemyHitSound() { if (!audioCtx || Date.now() - lastEnemyHitSoundTime < 50) return; lastEnemyHitSoundTime = Date.now(); const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; g.gain.setValueAtTime(0.08, audioCtx.currentTime); o.frequency.setValueAtTime(300, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1); }
+function playKillSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.15, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15);}
+function playDamageSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'square'; o.frequency.setValueAtTime(200, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.15); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.15); }
+function playJumpSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'triangle'; o.frequency.setValueAtTime(440, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); g.gain.setValueAtTime(0.1, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.1); }
+function playLevelUpSound() { if (!audioCtx) return; const notes = [523, 659, 783, 1046]; notes.forEach((note, i) => { const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sine'; o.frequency.setValueAtTime(note, audioCtx.currentTime + i * 0.07); g.gain.setValueAtTime(0.15, audioCtx.currentTime + i * 0.07); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + i * 0.07 + 0.1); o.start(audioCtx.currentTime + i * 0.07); o.stop(audioCtx.currentTime + i * 0.07 + 0.1); }); }
+function playBossSpawnSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(120, audioCtx.currentTime); o.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 1.5); g.gain.setValueAtTime(0.25, audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 1.5); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 1.5); }
+function playQuakeSound() { if (!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.type = 'sawtooth'; o.frequency.setValueAtTime(100, audioCtx.currentTime); o.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.3); g.gain.setValueAtTime(0.2, audioCtx.currentTime); g.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); o.start(audioCtx.currentTime); o.stop(audioCtx.currentTime + 0.3); }
+
+const THEMES=[{bg:'#212121',platform:'#424242',platformTop:'#6E6E6E',detail:'#313131',text:'#ECEFF1',highlight:'#FBC02D',enemy:'#B71C1C',projectile:'#FDD835',hp:'#D32F2F',xp:'#1976D2',shadow:'#000000'},{bg:'#263238',platform:'#455A64',platformTop:'#607D8B',detail:'#37474F',text:'#ECEFF1',highlight:'#FFCA28',enemy:'#D84315',projectile:'#FFEE58',hp:'#F44336',xp:'#42A5F5',shadow:'#000000'},{bg:'#3E2723',platform:'#5D4037',platformTop:'#795548',detail:'#4E342E',text:'#D7CCC8',highlight:'#FFC107',enemy:'#E64A19',projectile:'#FFEB3B',hp:'#E53935',xp:'#039BE5',shadow:'#1B0000'},{bg:'#1A237E',platform:'#283593',platformTop:'#3949AB',detail:'#1A237E',text:'#E8EAF6',highlight:'#F57F17',enemy:'#C62828',projectile:'#AED581',hp:'#C62828',xp:'#64B5F6',shadow:'#000A2C'},{bg:'#004D40',platform:'#00695C',platformTop:'#00897B',detail:'#003D33',text:'#E0F2F1',highlight:'#F9A825',enemy:'#AD1457',projectile:'#FF8A65',hp:'#D81B60',xp:'#29B6F6',shadow:'#001A15'}];
+let currentTheme = THEMES[0];
+let gameData = { settings: { performanceMode: false, volume: 25 }, customization: { outfit: 0, hat: 0, color: '#FFFFFF', unlockedOutfits: [0], unlockedHats: [0], unlockedColors: ['#FFFFFF'] } };
+function loadGameData() { const d=localStorage.getItem('seraphsLagStandData'); if(d){const loadedData=JSON.parse(d); gameData.settings=Object.assign(gameData.settings, loadedData.settings); gameData.customization = Object.assign(gameData.customization, loadedData.customization);}}
+function saveGameData() { localStorage.setItem('seraphsLagStandData', JSON.stringify(gameData));}
 
 class Player {
     constructor() { this.width=32;this.height=48;this.x=canvas.width/2-this.width/2;this.y=canvas.height-this.height-100;this.velocity={x:0,y:0};this.jumpsLeft=0;this.level=1;this.exp=0;this.expToNextLevel=100;this.shootCooldown=0;this.invincibilityTimer=0;this.upgrades={};this.activeAbilities={f:null,g:null,j:null};
@@ -618,12 +692,7 @@ function setupMenus(){
         {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { let colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); do { currentIndex = (currentIndex + dir + colors.length) % colors.length; } while (!gameData.customization.unlockedColors.includes(colors[currentIndex])); gameData.customization.color = colors[currentIndex];}},
         {x: canvas.width/2 - 100, y: 600, w: 200, h: 50, text: 'Save & Back', action: () => { saveGameData(); menuState = 'main'; playClickSound(); }}
     ];
-    wikiButtons = [
-        {x: 150, y: 150, w: 200, h: 40, text: 'Upgrades', type:'upgrades', action: () => { wikiTab = 'upgrades'; playClickSound(); }},
-        {x: 360, y: 150, w: 200, h: 40, text: 'Pacts', type:'pacts', action: () => { wikiTab = 'pacts'; playClickSound(); }},
-        {x: 570, y: 150, w: 200, h: 40, text: 'Cosmetics', type:'cosmetics', action: () => { wikiTab = 'cosmetics'; playClickSound(); }},
-        {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; wikiScrollY=0; playClickSound(); }}
-    ];
+     wikiButtons = [ {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; wikiScrollY=0; playClickSound(); }} ];
 }
 function drawMenu(){
     ctx.drawImage(skyCanvas,0,0);
@@ -660,7 +729,7 @@ function drawMenu(){
     else if(menuState==='settings'){ctx.fillStyle=currentTheme.highlight;ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillText("Settings & Binds",canvas.width/2,150);settingsButtons.forEach(btn=>drawButton(btn));ctx.fillStyle=currentTheme.text;ctx.font=`16px ${FONT_PRIMARY}`;ctx.fillText(`Volume: ${gameData.settings.volume}%`,canvas.width/2,440);const s={x:canvas.width/2-150,y:460,w:300,h:20};ctx.fillStyle='#555';ctx.fillRect(s.x,s.y,s.w,s.h);ctx.fillStyle=currentTheme.highlight;ctx.fillRect(s.x,s.y,s.w*(gameData.settings.volume/100),s.h);const binds=["A / D - Move Left / Right","Space - Jump","Mouse - Aim & Shoot","F,G,J - Active Abilities","ESC - Pause Game", "LPLP - God Mode", "LPLPLP - Summon Boss"];ctx.textAlign = 'left';binds.forEach((b,i)=>{ctx.fillText(b,100,250+i*30);});}
 }
 function drawPauseScreen(){drawPlaying();ctx.fillStyle='#00000099';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.fillStyle=currentTheme.highlight;ctx.font=`60px ${FONT_PRIMARY}`;ctx.fillText("Paused",canvas.width/2,150);pauseButtons.forEach(btn=>drawButton(btn));}
-function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(btn.type===wikiTab) a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
+function drawButton(btn){ ctx.save(); const h=mouse.x>btn.x&&mouse.x<btn.x+btn.w&&mouse.y>btn.y&&mouse.y<btn.y+btn.h; let a=false; if(btn.type==='quality'&&!gameData.settings.performanceMode)a=true; if(btn.type==='performance'&&gameData.settings.performanceMode)a=true; if(h||a){ctx.shadowColor=currentTheme.highlight;ctx.shadowBlur=15;} ctx.strokeStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.lineWidth=3; ctx.strokeRect(btn.x,btn.y,btn.w,btn.h); ctx.fillStyle=h||a?currentTheme.highlight:currentTheme.text; ctx.textAlign='center'; ctx.font=`16px ${FONT_PRIMARY}`; ctx.fillText(btn.text, btn.x + btn.w/2, btn.y + btn.h/2 + 8); ctx.restore(); }
 function drawPlayingUI(){if(!player)return;const hpBar={x:20,y:20,w:300,h:25};ctx.fillStyle='#00000080';ctx.fillRect(hpBar.x,hpBar.y,hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.hp;ctx.fillRect(hpBar.x,hpBar.y,player.hp/player.stats.maxHp*hpBar.w,hpBar.h);ctx.fillStyle=currentTheme.text;ctx.textAlign='center';ctx.font=`14px ${FONT_PRIMARY}`;ctx.shadowColor='black';ctx.shadowBlur=5;ctx.fillText(`${Math.ceil(player.hp||0)}/${player.stats.maxHp}`,hpBar.x+hpBar.w/2,hpBar.y+18);const xpBar={x:20,y:50,w:200,h:15};ctx.fillStyle='#00000080';ctx.fillRect(xpBar.x,xpBar.y,xpBar.w,xpBar.h);ctx.fillStyle=currentTheme.xp;ctx.fillRect(xpBar.x,xpBar.y,player.exp/player.expToNextLevel*xpBar.w,xpBar.h);ctx.fillText(`LVL ${player.level}`,xpBar.x+xpBar.w/2,xpBar.y+12);ctx.textAlign='right';const min=Math.floor(gameTime/6e4);const sec=Math.floor(gameTime%6e4/1e3).toString().padStart(2,'0');ctx.fillText(`${min}:${sec}`,canvas.width-30,40);const nBT=18e4-gameTime%18e4;const bM=Math.floor(nBT/6e4);const bS=Math.floor(nBT%6e4/1e3).toString().padStart(2,'0');if(!bossIsActive)ctx.fillText(`Boss:${bM}:${bS}`,canvas.width/2,40);ctx.shadowBlur=0;ctx.textAlign='left';drawActiveAbilityUI();}
 function drawActiveAbilityUI(){if(!player)return;let yOffset=0;['f','g','j'].forEach(key=>{const ability=player.activeAbilities[key];if(!ability)return;const s=50,p=10;const x=canvas.width-s-p,y=canvas.height-s-p-yOffset;const powerState=player.stats.activePowers[ability.stateName];ctx.fillStyle='#21212180';ctx.fillRect(x,y,s,s);ctx.strokeStyle='#FFF';ctx.lineWidth=2;ctx.strokeRect(x,y,s,s);drawCardIcon(ability.n,x+s*0.1,y+s*0.1,s*0.8);ctx.fillStyle='#FFF';ctx.font=`bold ${s*0.3}px ${FONT_PRIMARY}`;ctx.textAlign='left';ctx.fillText(key.toUpperCase(),x+p/2,y+s-p/2);if(powerState.active){const ratio=powerState.timer/ability.duration;const barHeight=5;ctx.fillStyle='#76FF03';ctx.fillRect(x,y+s-barHeight,s*ratio,barHeight);}else if(powerState.cooldownTimer>0){ctx.fillStyle='#000000A0';ctx.fillRect(x,y,s,s);const secondsLeft=Math.ceil(powerState.cooldownTimer/1000);ctx.font=`bold ${s*0.6}px ${FONT_PRIMARY}`;ctx.textAlign='center';ctx.fillStyle='#FFF';ctx.fillText(secondsLeft,x+s/2,y+s/2+(s*0.2));}yOffset+=s+p;});}
 function drawPactScreen(){drawPlaying();ctx.fillStyle='#000000D0';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.textAlign='center';ctx.font=`40px ${FONT_PRIMARY}`;ctx.fillStyle='#D32F2F';ctx.shadowColor='black';ctx.shadowBlur=10;ctx.fillText("A PACT IS OFFERED",canvas.width/2,150);ctx.shadowBlur=0;const cardW=280,cardH=350,gap=50;const totalW=2*cardW+gap;const sX=(canvas.width-totalW)/2;const y=canvas.height/2-cardH/2;currentPactChoices.forEach((card,index)=>{const x=sX+index*(cardW+gap);const isH=mouse.x>x&&mouse.x<x+cardW&&mouse.y>y&&mouse.y<y+cardH;const grad=ctx.createLinearGradient(x,y,x,y+cardH);grad.addColorStop(0,'#420b0b');grad.addColorStop(1,'#1A0000');ctx.fillStyle=grad;ctx.fillRect(x,y,cardW,cardH);ctx.strokeStyle=isH?'#FF1744':'#E53935';ctx.lineWidth=4;ctx.strokeRect(x,y,cardW,cardH);ctx.fillStyle='#FF8A80';ctx.font=`bold 18px ${FONT_PRIMARY}`;ctx.fillText(card.n,x+cardW/2,y+50);drawCardIcon(card.n,x+cardW/2-40,y+80,80);ctx.fillStyle='#FFCDD2';ctx.font=`14px ${FONT_PRIMARY}`;const dWords=card.d.split(' ');let line='',tY=y+200;for(let n=0;n<dWords.length;n++){let tL=line+dWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=dWords[n]+' ';tY+=25;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);if(card.l){ctx.fillStyle='#E57373';ctx.font=`italic 11px ${FONT_PRIMARY}`;tY+=40;const lWords=card.l.split(' ');line='';for(let n=0;n<lWords.length;n++){let tL=line+lWords[n]+' ';if(ctx.measureText(tL).width>cardW-40&&n>0){ctx.fillText(line,x+cardW/2,tY);line=lWords[n]+' ';tY+=18;}else{line=tL;}}ctx.fillText(line,x+cardW/2,tY);}})}
@@ -741,22 +810,8 @@ canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();m
 canvas.addEventListener('mousedown',()=>{mouse.down=true});
 canvas.addEventListener('mouseup',()=>{mouse.down=false;if(gameState==='menu'&&menuState==='settings'){saveGameData();}});
 canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==='gameOver'&&restartTimer<=0){playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if(ytPlayer)ytPlayer.playVideo(); return;}
-    if(gameState==='menu'){
-        let currentButtons=[];
-        if (menuState==='main') currentButtons=menuButtons;
-        else if(menuState==='settings') currentButtons=settingsButtons;
-        else if (menuState === 'customize') currentButtons = customizeButtons; 
-        else if (menuState === 'wiki') currentButtons = wikiButtons;
-        
-        currentButtons.forEach(b=>{
-            if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h){
-                if(b.text.includes('<')) { 
-                    b.action(mouse.x < b.x + b.w/2 ? -1 : 1);
-                } else { 
-                    b.action(); 
-                }
-            }
-        });
+    if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if (menuState === 'customize') currentButtons = customizeButtons; else if (menuState === 'wiki') currentButtons = wikiButtons;
+        currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h){if(b.text.includes('<')) { b.action(mouse.x < b.x + b.w/2 ? -1 : 1); } else { b.action(); }}});
     }else if(gameState==='paused'){pauseButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='levelUp' || gameState==='bossReward'){
         if (!canClickCards) return;
