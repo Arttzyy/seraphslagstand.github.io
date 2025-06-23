@@ -166,12 +166,17 @@ function drawWikiMenu() {
 
     let yPos = 220;
     pageItems.forEach(item => {
-        ctx.fillStyle = item.r === 'pact' ? '#FF8A80' : RARITY_COLORS[item.r] || 'white';
-        ctx.fillText(`- ${item.n} ${item.r ? `(${RARITY_MAP[item.r]})` : ''}`, 150, yPos);
+        let rarityColor = 'white';
+        if (item.r) {
+             const rarityColors = {c: '#FFFFFF', u: '#64B5F6', r: '#BA68C8', l: '#FFD54F', mythic: '#40E0D0', cursed: '#E57373', pact: '#FF8A80'};
+             rarityColor = rarityColors[item.r];
+        }
+        ctx.fillStyle = rarityColor;
+        ctx.fillText(`- ${item.name} ${item.r ? `(${RARITY_MAP[item.r]})` : ''}`, 150, yPos);
         ctx.fillStyle = 'white';
         ctx.fillText(item.d, 170, yPos + 20);
         
-        if (item.unlock) {
+        if (item.unlock && item.unlock !== 'Default') {
             ctx.fillStyle = '#AAAAAA';
             ctx.font = '10px "Press Start 2P"';
             ctx.fillText(`Desbloqueia: ${item.unlock}`, 170, yPos + 35);
@@ -180,6 +185,20 @@ function drawWikiMenu() {
         
         yPos += 60;
     });
+
+    // Controles de página
+    if (wikiMaxPages > 1) {
+        drawButton(wikiButtons.find(b => b.text === '<'));
+        drawButton(wikiButtons.find(b => b.text === '>'));
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'white';
+        ctx.font = `16px ${FONT_PRIMARY}`;
+        ctx.fillText(`Página ${wikiPage + 1} / ${wikiMaxPages}`, canvas.width / 2, canvas.height - 70);
+    }
+    
+    // Botão Voltar
+    drawButton(wikiButtons.find(b => b.text === 'Back'));
+}
 
     // Controles de página
     if (wikiMaxPages > 1) {
