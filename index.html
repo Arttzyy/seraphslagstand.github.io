@@ -58,6 +58,7 @@
         .hidden { display: none !important; }
         #nickname-input { font-family: 'Press Start 2P', cursive; background-color: #333; border: 2px solid #999; color: white; padding: 10px; font-size: 16px; text-align: center; width: 300px; margin-top: 20px; }
         #nickname-button {width: auto;}
+
     </style>
 </head>
 <body>
@@ -92,7 +93,7 @@ canvas.width = 1280; canvas.height = 720;
 ctx.imageSmoothingEnabled = false;
 
 // --- GAME STATE & CONSTANTS ---
-const GAME_VERSION = "1.0";
+const GAME_VERSION = "1.0.2";
 const FONT_PRIMARY = '"Press Start 2P"';
 const GRAVITY = 0.7;
 let gameState = 'intro';
@@ -114,6 +115,7 @@ let bossTimer, eventTimer, spaceshipSpawnTimer = 0;
 let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
+let wikiScrollY = 0;
 
 // --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
@@ -129,6 +131,44 @@ const mouse = { x: canvas.width / 2, y: canvas.height / 2, down: false };
 // --- LEADERBOARD (ONLINE - JSONBin.io) ---
 async function fetchLeaderboard() { try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); if (!response.ok) throw new Error('Failed to fetch leaderboard'); const data = await response.json(); leaderboardData = data.record.scores || []; } catch (error) { console.error("Leaderboard Error:", error); leaderboardData = []; } }
 async function submitScore(nickname, score) { if (!nickname || typeof score !== 'number' || score === 0) return; let currentScores = []; try { const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': MASTER_KEY } }); const data = await response.json(); currentScores = data.record.scores || []; } catch (error) { console.error("Could not fetch scores to submit new one:", error); currentScores = []; } const existingEntry = currentScores.find(entry => entry.nickname === nickname); if (existingEntry && score <= existingEntry.score) { await fetchLeaderboard(); return; } const otherPlayerScores = currentScores.filter(entry => entry.nickname !== nickname); otherPlayerScores.push({ nickname: nickname, score: score }); otherPlayerScores.sort((a, b) => b.score - a.score); const newLeaderboard = otherPlayerScores.slice(0, 10); try { await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': MASTER_KEY }, body: JSON.stringify({ scores: newLeaderboard }) }); leaderboardData = newLeaderboard; } catch (error) { console.error("Could not submit new score:", error); } }
+
+// --- PATCH NOTES ---
+function showPatchNotes() {
+    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
+    if (lastSeenVersion === GAME_VERSION) return;
+
+    const patchNotesContainer = document.getElementById('patch-notes-container');
+    const patchNotesContent = document.getElementById('patch-notes-content');
+    patchNotesContent.innerHTML = `
+        <h1>Patch Notes - V${GAME_VERSION}</h1>
+        <h2>Novas Funcionalidades Épicas!</h2>
+        <ul>
+            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos para tornar cada batalha uma experiência única.</li>
+            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado! Personalize seu personagem com chapéus, roupas e cores.</li>
+            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear cosméticos temáticos e exibir suas conquistas!</li>
+            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
+        </ul>
+        <h2>Melhorias e Mudanças</h2>
+        <ul>
+            <li>Inimigos ficam mais fortes (HP, dano e velocidade) a cada chefe derrotado.</li>
+            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
+            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de recompensa para evitar escolhas acidentais.</li>
+            <li>O aviso visual do ataque de chão do primeiro chefe agora pisca em vermelho ANTES do dano, permitindo reação.</li>
+        </ul>
+        <h2>Correções de Bugs</h2>
+        <ul>
+            <li>Corrigido um bug crítico que impedia o jogo de carregar devido a uma função não definida.</li>
+            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
+            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
+        </ul>
+        <button class="close-button" id="close-patch-notes">Let's Go!</button>
+    `;
+    patchNotesContainer.classList.remove('hidden');
+    document.getElementById('close-patch-notes').addEventListener('click', () => {
+        patchNotesContainer.classList.add('hidden');
+        localStorage.setItem('lastSeenVersion', GAME_VERSION);
+    });
+}
 
 // --- NICKNAME & INTRO LOGIC ---
 const nicknameContainer = document.getElementById('nickname-container'); const nicknameInput = document.getElementById('nickname-input'); const nicknameButton = document.getElementById('nickname-button');
@@ -318,6 +358,7 @@ if(player&&player.stats.contactDamage>0&&checkCollision(this,player)){this.takeD
 shoot(){let pSpeed=player&&player.stats.activePowers.chronoShift.active?2:6;const angle=Math.atan2(player.y+player.height/2-(this.y+this.height/2),player.x+player.width/2-(this.x+this.width/2));let color=this.type==='brute'?'#795548':this.type==='jester'?'#FFEB3B':currentTheme.enemy;let size=this.type==='brute'?10:6;const proj=new Projectile(this.x+this.width/2,this.y+this.height/2,Math.cos(angle)*pSpeed,Math.sin(angle)*pSpeed,size,color,this.damage,false);if(this.type==='jester'){proj.split=true;proj.splitTimer=1000;}
 enemyProjectiles.push(proj);}
 takeDamage(amount,fromProjectile, isExecutionPossible = false){
+    if (this.isInvulnerable) return;
     if (isExecutionPossible && this.hp <= amount) { this.hp = 0; } else { this.hp-=amount; }
     if (fromProjectile) {
         playEnemyHitSound();
@@ -381,7 +422,7 @@ function setupMenus(){
         {x: 400, y: 420, w: 150, h: 50, text: '< Color >', action: (dir) => { let colors = COLORS.map(c => c.hex); let currentIndex = colors.indexOf(gameData.customization.color); do { currentIndex = (currentIndex + dir + colors.length) % colors.length; } while (!gameData.customization.unlockedColors.includes(colors[currentIndex])); gameData.customization.color = colors[currentIndex];}},
         {x: canvas.width/2 - 100, y: 600, w: 200, h: 50, text: 'Save & Back', action: () => { saveGameData(); menuState = 'main'; playClickSound(); }}
     ];
-     wikiButtons = [ {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; playClickSound(); }} ];
+     wikiButtons = [ {x: canvas.width/2 - 100, y: canvas.height - 100, w: 200, h: 50, text: 'Back', action: () => { menuState = 'main'; wikiScrollY=0; playClickSound(); }} ];
 }
 function drawMenu(){
     ctx.drawImage(skyCanvas,0,0);
@@ -499,7 +540,8 @@ canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect();m
 canvas.addEventListener('mousedown',()=>{mouse.down=true});
 canvas.addEventListener('mouseup',()=>{mouse.down=false;if(gameState==='menu'&&menuState==='settings'){saveGameData();}});
 canvas.addEventListener('click',e=>{if(gameState==='intro')return;if(gameState==='gameOver'&&restartTimer<=0){playClickSound(); player = null; gameState='menu';menuState='main';fetchLeaderboard(); if(ytPlayer)ytPlayer.playVideo(); return;}
-    if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if (menuState === 'customize') currentButtons = customizeButtons; else if (menuState === 'wiki') currentButtons = wikiButtons; else if(menuState==='binds')currentButtons=bindsButtons;currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h){if(b.text.includes('<')) { b.action(mouse.x < b.x + b.w/2 ? -1 : 1); } else { b.action(); }}});
+    if(gameState==='menu'){let currentButtons=[];if(menuState==='main')currentButtons=menuButtons;else if(menuState==='settings')currentButtons=settingsButtons;else if (menuState === 'customize') currentButtons = customizeButtons; else if (menuState === 'wiki') currentButtons = wikiButtons;
+        currentButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h){if(b.text.includes('<')) { b.action(mouse.x < b.x + b.w/2 ? -1 : 1); } else { b.action(); }}});
     }else if(gameState==='paused'){pauseButtons.forEach(b=>{if(mouse.x>b.x&&mouse.x<b.x+b.w&&mouse.y>b.y&&mouse.y<b.y+b.h)b.action()});
     }else if(gameState==='levelUp' || gameState==='bossReward'){
         if (!canClickCards) return;
@@ -616,45 +658,6 @@ function summonNextBoss() {
     bossTimer = 180000;
     floatingTexts.push(new FloatingText(player.x, player.y - 40, "SUMMONING BOSS!", "orange"));
 }
-
-// --- PATCH NOTES ---
-function showPatchNotes() {
-    const lastSeenVersion = localStorage.getItem('lastSeenVersion');
-    if (lastSeenVersion === GAME_VERSION) return;
-
-    const patchNotesContainer = document.getElementById('patch-notes-container');
-    const patchNotesContent = document.getElementById('patch-notes-content');
-    patchNotesContent.innerHTML = `
-        <h1>Patch Notes - V${GAME_VERSION}</h1>
-        <h2>Novas Funcionalidades</h2>
-        <ul>
-            <li><b>Chefes Únicos:</b> 5 novos chefes foram adicionados, cada um com visuais, movimentos e poderes exclusivos!</li>
-            <li><b>Customização de Avatar:</b> Um novo menu "Customize" foi adicionado para personalizar seu personagem.</li>
-            <li><b>Sistema de Desbloqueio:</b> Derrote chefes para desbloquear chapéus, roupas e cores temáticas!</li>
-            <li><b>Wiki do Jogo:</b> Um novo menu "Wiki" foi adicionado com informações sobre todos os upgrades, pactos e cosméticos.</li>
-        </ul>
-        <h2>Melhorias e Mudanças</h2>
-        <ul>
-            <li>O poder 'Thunderbolt' agora causa 35 de dano base e executa inimigos com vida baixa.</li>
-            <li>A dificuldade do jogo agora aumenta permanentemente após cada chefe derrotado.</li>
-            <li>Adicionado um atraso de 2 segundos para clicar nas cartas de upgrade para evitar escolhas acidentais.</li>
-            <li>O aviso visual do ataque de chão do primeiro chefe agora acontece ANTES do dano.</li>
-        </ul>
-        <h2>Correções de Bugs</h2>
-        <ul>
-            <li>Corrigido um bug crítico que impedia o jogo de carregar.</li>
-            <li>Corrigido um bug que impedia o clique nas cartas de pacto.</li>
-            <li>Melhorada a estabilidade geral e corrigidos pequenos bugs visuais.</li>
-        </ul>
-        <button class="close-button" id="close-patch-notes">Let's Go!</button>
-    `;
-    patchNotesContainer.classList.remove('hidden');
-    document.getElementById('close-patch-notes').addEventListener('click', () => {
-        patchNotesContainer.classList.add('hidden');
-        localStorage.setItem('lastSeenVersion', GAME_VERSION);
-    });
-}
-
 
 loadGameData();
 initializeNickname();
