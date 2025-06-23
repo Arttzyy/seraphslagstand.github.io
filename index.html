@@ -80,6 +80,79 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 
+// --- NOVAS FUNÇÕES DE MENU ---
+
+function drawCustomizeMenu() {
+    ctx.fillStyle = currentTheme.highlight;
+    ctx.font = `40px ${FONT_PRIMARY}`;
+    ctx.fillText("Customize", canvas.width / 2, 150);
+
+    // Prévia do jogador
+    drawPlayerSprite({ x: canvas.width / 2 - 64, y: 300, width: 64, height: 96, invincibilityTimer: 0 }, currentTheme);
+
+    // Botões
+    customizeButtons.forEach(btn => drawButton(btn));
+}
+
+function drawWikiMenu() {
+    ctx.fillStyle = currentTheme.highlight;
+    ctx.font = `40px ${FONT_PRIMARY}`;
+    ctx.fillText("Game Wiki", canvas.width / 2, 100);
+
+    wikiButtons.forEach(btn => {
+        let originalText = btn.text;
+        if (btn.type === wikiTab) {
+            btn.text = `> ${originalText} <`;
+        }
+        drawButton(btn);
+        btn.text = originalText; // Restaura o texto original para a próxima verificação
+    });
+
+    // Conteúdo da Wiki (simplificado por enquanto)
+    ctx.textAlign = 'left';
+    ctx.font = `14px ${FONT_PRIMARY}`;
+    ctx.fillStyle = 'white';
+
+    let yPos = 220;
+    if (wikiTab === 'upgrades') {
+        UPGRADES.forEach(item => {
+            ctx.fillStyle = 'yellow';
+            ctx.fillText(`- ${item.n} (${RARITY_MAP[item.r]})`, 150, yPos);
+            ctx.fillStyle = 'white';
+            ctx.fillText(item.d, 170, yPos + 20);
+            yPos += 50;
+        });
+    } else if (wikiTab === 'pacts') {
+         PACTS.forEach(item => {
+            ctx.fillStyle = 'red';
+            ctx.fillText(`- ${item.n}`, 150, yPos);
+            ctx.fillStyle = 'white';
+            ctx.fillText(item.d, 170, yPos + 20);
+            yPos += 50;
+        });
+    } else if (wikiTab === 'cosmetics') {
+        yPos = 220;
+        ctx.fillStyle = '#64B5F6';
+        ctx.fillText("Hats:", 150, yPos);
+        yPos += 30;
+        HATS.forEach((item, index) => {
+             ctx.fillStyle = gameData.customization.unlockedHats.includes(index) ? 'white' : '#777';
+             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
+             yPos += 25;
+        });
+
+        yPos += 30;
+        ctx.fillStyle = '#64B5F6';
+        ctx.fillText("Outfits:", 150, yPos);
+        yPos += 30;
+         OUTFITS.forEach((item, index) => {
+             ctx.fillStyle = gameData.customization.unlockedOutfits.includes(index) ? 'white' : '#777';
+             ctx.fillText(`- ${item.name} (Unlock: ${item.unlock})`, 170, yPos);
+             yPos += 25;
+        });
+    }
+}
+
 function showPatchNotes() {
     const patchNotesContainer = document.getElementById('patch-notes-container');
     if (patchNotesContainer) {
@@ -319,6 +392,7 @@ let leaderboardData = [];
 let difficultyIsCapped = false;
 let cappedDifficultyValue = 1;
 let canClickCards = true;
+let wikiTab = 'upgrades';
 
 let player, terrain;
 let enemies = [], playerProjectiles = [], enemyProjectiles = [], particles = [], floatingTexts = [];
