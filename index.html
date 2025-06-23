@@ -130,6 +130,203 @@ let screenShake = { active: false, magnitude: 0, duration: 0 };
 let skyCanvas, terrainCanvas, ytPlayer, isMusicReady = false, audioCtx;
 let hasUserInteracted = false;
 
+// --- DADOS DE CUSTOMIZAÇÃO E DESBLOQUEIOS ---
+
+const OUTFITS = [
+    { 
+        name: 'Visor Padrão', 
+        unlock: 'Default', 
+        draw: (x, y, w, h) => {
+            const visorGradient=ctx.createLinearGradient(x-5,y+15,x+w+10,y+15);
+            visorGradient.addColorStop(0,'#303F9F');
+            visorGradient.addColorStop(0.5,'#5C6BC0');
+            visorGradient.addColorStop(1,'#303F9F');
+            ctx.fillStyle=visorGradient;
+            ctx.fillRect(x-5,y+15,w+10,8);
+        }
+    },
+    { 
+        name: 'Peitoral de Pedra', 
+        unlock: 'Guardião de Pedra', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#A1887F';
+            ctx.fillRect(x + 4, y + 18, w - 8, 10);
+        }
+    },
+    { 
+        name: 'Olho do Vazio', 
+        unlock: 'Observador do Vazio', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#D500F9';
+            ctx.beginPath();
+            ctx.arc(x + w / 2, y + 30, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    },
+    { 
+        name: 'Carapaça de Enxame', 
+        unlock: 'Enxame da Colmeia', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#FFC107';
+            ctx.beginPath();
+            ctx.moveTo(x, y + 20); ctx.lineTo(x + w, y + 20);
+            ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h);
+            ctx.closePath();
+            ctx.globalAlpha = 0.3;
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    },
+    { 
+        name: 'Manto de Cristal', 
+        unlock: 'Sentinela de Cristal', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#F06292';
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(x-5, y + 20);
+            ctx.lineTo(x + w + 5, y + 20);
+            ctx.lineTo(x + w / 2, y + h + 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    },
+    { 
+        name: 'Asas do Serafim', 
+        unlock: 'Serafim da Ruína', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#FFD600';
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(x, y + 25);
+            ctx.lineTo(x - 20, y + 10);
+            ctx.lineTo(x, y + 40);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + w, y + 25);
+            ctx.lineTo(x + w + 20, y + 10);
+            ctx.lineTo(x + w, y + 40);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+        }
+    },
+];
+
+const HATS = [
+    { 
+        name: 'Chapéu Padrão', 
+        unlock: 'Default', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#42A5F5';
+            ctx.beginPath();
+            ctx.moveTo(x + w / 2, y);
+            ctx.lineTo(x, y + 22);
+            ctx.lineTo(x + w, y + 22);
+            ctx.closePath();
+            ctx.fill();
+        }
+    },
+    { 
+        name: 'Elmo de Pedra', 
+        unlock: 'Guardião de Pedra', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#A1887F';
+            ctx.fillRect(x, y - 5, w, 10);
+            ctx.fillRect(x + 5, y - 10, w - 10, 5);
+        }
+    },
+    { 
+        name: 'Coroa do Vazio', 
+        unlock: 'Observador do Vazio', 
+        draw: (x, y, w, h) => {
+            const angle = Date.now() / 300;
+            ctx.beginPath();
+            ctx.arc(x + w/2, y + 10, 10, angle, angle + Math.PI);
+            ctx.strokeStyle = '#D500F9';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+    },
+    { 
+        name: 'Antenas de Inseto', 
+        unlock: 'Enxame da Colmeia', 
+        draw: (x, y, w, h) => {
+            ctx.strokeStyle = '#6D4C41';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x + w/2 - 5, y + 10);
+            ctx.lineTo(x, y - 5);
+            ctx.moveTo(x + w/2 + 5, y + 10);
+            ctx.lineTo(x + w, y - 5);
+            ctx.stroke();
+        }
+    },
+     { 
+        name: 'Chifre de Cristal', 
+        unlock: 'Sentinela de Cristal', 
+        draw: (x, y, w, h) => {
+            ctx.fillStyle = '#F06292';
+            ctx.beginPath();
+            ctx.moveTo(x + w/2, y - 10);
+            ctx.lineTo(x + w/2 - 10, y + 15);
+            ctx.lineTo(x + w/2 + 10, y + 15);
+            ctx.closePath();
+            ctx.fill();
+        }
+    },
+    { 
+        name: 'Auréola do Serafim', 
+        unlock: 'Serafim da Ruína', 
+        draw: (x, y, w, h) => {
+            ctx.strokeStyle = '#FFD600';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.ellipse(x + w / 2, y + 5, 20, 5, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    },
+];
+
+const COLORS = [
+    { name: 'Padrão', hex: '#FFFFFF', unlock: 'Default' },
+    { name: 'Pedra', hex: '#BCAAA4', unlock: 'Guardião de Pedra' },
+    { name: 'Vazio', hex: '#CE93D8', unlock: 'Observador do Vazio' },
+    { name: 'Colmeia', hex: '#FFF59D', unlock: 'Enxame da Colmeia' },
+    { name: 'Cristal', hex: '#F48FB1', unlock: 'Sentinela de Cristal' },
+    { name: 'Divino', hex: '#FFFDE7', unlock: 'Serafim da Ruína' }
+];
+
+function unlockCosmetics(bossIndex) {
+    if (bossIndex >= BOSS_TYPES.length) return;
+    
+    const bossName = BOSS_TYPES[bossIndex].name;
+    const hat = HATS.find(h => h.unlock === bossName);
+    const outfit = OUTFITS.find(o => o.unlock === bossName);
+    const color = COLORS.find(c => c.unlock === bossName);
+
+    if (hat) {
+        const hatIndex = HATS.indexOf(hat);
+        if (!gameData.customization.unlockedHats.includes(hatIndex)) {
+            gameData.customization.unlockedHats.push(hatIndex);
+        }
+    }
+    if (outfit) {
+        const outfitIndex = OUTFITS.indexOf(outfit);
+        if (!gameData.customization.unlockedOutfits.includes(outfitIndex)) {
+            gameData.customization.unlockedOutfits.push(outfitIndex);
+        }
+    }
+    if (color) {
+        if (!gameData.customization.unlockedColors.includes(color.hex)) {
+            gameData.customization.unlockedColors.push(color.hex);
+        }
+    }
+    saveGameData();
+}
+
 // --- QUICK TIME EVENT (QTE) STATE ---
 let qteState = { active: false, keyToPress: null, timer: 0, maxTime: 1500, success: null };
 
